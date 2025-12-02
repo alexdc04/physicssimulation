@@ -3,6 +3,7 @@ import time
 import pybullet_data
 from xacrodoc import XacroDoc
 import os
+
 def read_xacro(file_name: str) -> str:
     current_file = file_name
 
