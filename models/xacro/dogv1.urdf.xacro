@@ -1,0 +1,110 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="arm">
+
+<xacro:property name="total_weight" value="20" /> <!--KG-->
+<xacro:property name="torso_weight" value="${total_weight * 0.5}" />
+<xacro:property name="leg_weight" value="${(total_weight - torso_weight) * 0.25}" />
+
+<xacro:property name="torso_length" value="2.5"/>
+<xacro:property name="leg_length" value="1.5"/>
+
+<xacro:macro name="cuboid_inertia_tensors" params="weight length" >
+    <inertial>
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+        <mass value="${weight}"/>
+        <inertia 
+        ixx="${(weight/12)*((length*length*.025)+(length*length*0.0225))}" ixy="0.0" ixz="0.0" 
+        iyy="${(weight/12)*((length*length)+(length*length*0.0225))}" iyz="0.0" 
+        izz="${(weight/12)*((length*length)+(length*length*0.025))}"/>
+    </inertial>
+</xacro:macro>
+
+<xacro:macro name="revolve" params="name parent child hi lo axis offset">
+    <joint name="${name}" type="revolute">
+        <parent link="${parent}"/>
+        <child link="${child}"/>
+        <limit lower="${lo}" upper="${hi}" effort="20.0" velocity="20.0"/>
+        <origin xyz="${offset}"/>
+        <axis xyz="${axis}"/>
+    </joint>
+</xacro:macro>
+
+<xacro:macro name="torso" params="name weight length">
+    <link name="${name}">
+        <visual>
+            <geometry>
+                <box size="${length} ${length * 0.5} ${length * 0.15}"/>
+            </geometry>
+            <origin />
+        </visual>
+        <collision>
+            <geometry>
+                <box size="${length} ${length * 0.5} ${length * 0.15}"/>
+            </geometry>
+            <origin />
+        </collision>
+        <xacro:cuboid_inertia_tensors weight="${weight}" length="${length}"/>
+    </link>
+</xacro:macro>
+
+<xacro:macro name="leg" params="name weight length offset">
+    <link name="${name}_upper">
+        <visual>
+            <geometry>
+                <box size="${length * 0.35} ${length * 0.15} ${length * 0.15}"/>
+            </geometry>
+            <origin xyz="-${length * 0.15} 0 0" rpy="0 -.25 0"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="${length * 0.35} ${length * 0.15} ${length * 0.15}"/>
+            </geometry>
+            <origin xyz="-${length * 0.15} 0 0" rpy="0 -.25 0"/>
+        </collision>
+        <xacro:cuboid_inertia_tensors weight="${weight}" length="${length}"/>
+    </link>
+
+    <link name="${name}_lower">
+        <visual>
+            <geometry>
+                <box size="${length * 0.75} ${length * 0.15} ${length * 0.15}"/>
+            </geometry>
+            <origin xyz="0 0 -${length * 0.335} " rpy="0 1.3 0"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="${length * 0.75} ${length * 0.15} ${length * 0.15}"/>
+            </geometry>
+            <origin xyz="0 0 -${length * 0.335} " rpy="0 1.3 0"/>
+        </collision>
+        <xacro:cuboid_inertia_tensors weight="${weight}" length="${length}"/>
+    </link>
+
+    <link name="${name}_foot">
+        <visual>
+            <geometry>
+                <box size="${length * 0.35} ${length * 0.15} ${length * 0.15}"/>
+            </geometry>
+            <origin xyz="-${length * 0.15} 0 0" rpy="0 0 0"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="${length * 0.35} ${length * 0.15} ${length * 0.15}"/>
+            </geometry>
+            <origin xyz="-${length * 0.15} 0 0" rpy="0 0 0"/>
+        </collision>
+        <xacro:cuboid_inertia_tensors weight="${weight}" length="${length}"/>
+    </link>
+
+    <xacro:revolve name="${name}_shoulder" parent="base_link" child="${name}_upper" lo="-1.2" hi="1.2" axis="0 1 0" offset="${offset}"/>
+    <xacro:revolve name="${name}_knee" parent="${name}_upper" child="${name}_lower" lo="-1.2" hi="1.2" axis="0 1 0" offset="-${length * 0.25} 0 0"/>
+    <xacro:revolve name="${name}_ankle" parent="${name}_lower" child="${name}_foot" lo="-1.2" hi="1.2" axis="0 1 0" offset="${length * 0.1} 0 -${length * 0.65}"/>
+</xacro:macro>
+
+
+<xacro:torso name="base_link" weight="${torso_weight}" length="${torso_length}"/>
+<xacro:leg name="back_right" weight="${leg_weight}" length="${leg_length}" offset="${torso_length * 0.35} ${torso_length * 0.3} 0"/>
+<xacro:leg name="back_left" weight="${leg_weight}" length="${leg_length}" offset="${torso_length * 0.35} -${torso_length * 0.3} 0"/>
+<xacro:leg name="front_right" weight="${leg_weight}" length="${leg_length}" offset="-${torso_length * 0.35} ${torso_length * 0.3} 0"/>
+<xacro:leg name="front_left" weight="${leg_weight}" length="${leg_length}" offset="-${torso_length * 0.35} -${torso_length * 0.3} 0"/>
+</robot>

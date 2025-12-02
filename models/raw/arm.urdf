@@ -1,0 +1,38 @@
+<?xml version="1.0" ?>
+<robot name="arm">
+  <link name="right_limb">
+    <visual>
+      <geometry>
+        <box size="0.2 0.05 0.05"/>
+      </geometry>
+      <origin xyz="0 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.2 0.05 0.05"/>
+      </geometry>
+      <origin xyz="0 0 0"/>
+    </collision>
+  </link>
+  <link name="far_right_limb">
+    <visual>
+      <geometry>
+        <box size="0.2 0.05 0.05"/>
+      </geometry>
+      <origin xyz=".1 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.2 0.05 0.05"/>
+      </geometry>
+      <origin xyz=".1 0 0"/>
+    </collision>
+  </link>
+  <joint name="elbow_joint" type="revolute">
+    <parent link="right_limb"/>
+    <child link="far_right_limb"/>
+    <limit effort="0.0" lower="-1.2" upper="0" velocity="0.0"/>
+    <origin xyz=".1 0 0"/>
+    <axis xyz="0.0 1 0.0"/>
+  </joint>
+</robot>

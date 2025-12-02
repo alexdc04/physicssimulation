@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+<robot name="arm">
+  <link name="baseplate">
+    <visual>
+      <geometry>
+        <box size="100 100 1"/>
+      </geometry>
+      <origin/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="100 100 100"/>
+      </geometry>
+      <origin/>
+    </collision>
+  </link>
+</robot>

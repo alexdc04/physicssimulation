@@ -1,0 +1,522 @@
+<?xml version="1.0" ?>
+<robot name="arm">
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="right_foot">
+    <visual>
+      <geometry>
+        <box size="0.04 0.02 0.001"/>
+      </geometry>
+      <origin xyz=".01 0 -0.0075"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.04 0.02 0.001"/>
+      </geometry>
+      <origin xyz=".01 0 -0.0075"/>
+    </collision>
+  </link>
+  <link name="left_foot">
+    <visual>
+      <geometry>
+        <box size="0.04 0.02 0.001"/>
+      </geometry>
+      <origin xyz=".01 0 -0.0075"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.04 0.02 0.001"/>
+      </geometry>
+      <origin xyz=".01 0 -0.0075"/>
+    </collision>
+  </link>
+  <link name="body">
+    <visual>
+      <geometry>
+        <cylinder length="0.075" radius="0.0050"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 .03"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.075" radius="0.0050"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 .03"/>
+    </collision>
+  </link>
+  <link name="traps">
+    <visual>
+      <geometry>
+        <cylinder length="0.075" radius="0.0050"/>
+      </geometry>
+      <origin rpy="1.57079632679 0 0" xyz="0 0 .075"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.075" radius="0.0050"/>
+      </geometry>
+      <origin rpy="1.57079632679 0 0" xyz="0 0 .075"/>
+    </collision>
+  </link>
+  <link name="right_bicep">
+    <visual>
+      <geometry>
+        <cylinder length="0.035" radius="0.0050"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.025"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.035" radius="0.0050"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.025"/>
+    </collision>
+  </link>
+  <link name="left_bicep">
+    <visual>
+      <geometry>
+        <cylinder length="0.035" radius="0.0050"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.025"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.035" radius="0.0050"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.025"/>
+    </collision>
+  </link>
+  <link name="right_forearm">
+    <visual>
+      <geometry>
+        <cylinder length="0.035" radius="0.0050"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.025"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.035" radius="0.0050"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.025"/>
+    </collision>
+  </link>
+  <link name="left_forearm">
+    <visual>
+      <geometry>
+        <cylinder length="0.035" radius="0.0050"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.025"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.035" radius="0.0050"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.025"/>
+    </collision>
+  </link>
+  <link name="right_groin">
+    <visual>
+      <geometry>
+        <cylinder length="0.02" radius="0.0050"/>
+      </geometry>
+      <origin rpy="-0.785398 0 0" xyz="0 -.012 -.012"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.02" radius="0.0050"/>
+      </geometry>
+      <origin rpy="-0.785398 0 0" xyz="0 -.012 -.012"/>
+    </collision>
+  </link>
+  <link name="left_groin">
+    <visual>
+      <geometry>
+        <cylinder length="0.02" radius="0.0050"/>
+      </geometry>
+      <origin rpy="0.785398 0 0" xyz="0 .012 -.012"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.02" radius="0.0050"/>
+      </geometry>
+      <origin rpy="0.785398 0 0" xyz="0 .012 -.012"/>
+    </collision>
+  </link>
+  <link name="right_thigh">
+    <visual>
+      <geometry>
+        <cylinder length="0.05" radius="0.0050"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.03"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.05" radius="0.0050"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.03"/>
+    </collision>
+  </link>
+  <link name="left_thigh">
+    <visual>
+      <geometry>
+        <cylinder length="0.05" radius="0.0050"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.03"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.05" radius="0.0050"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.03"/>
+    </collision>
+  </link>
+  <link name="right_calf">
+    <visual>
+      <geometry>
+        <cylinder length="0.05" radius="0.0050"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.03"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.05" radius="0.0050"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.03"/>
+    </collision>
+  </link>
+  <link name="left_calf">
+    <visual>
+      <geometry>
+        <cylinder length="0.05" radius="0.0050"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.03"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.05" radius="0.0050"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.03"/>
+    </collision>
+  </link>
+  <link name="pelvis">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 0"/>
+    </collision>
+  </link>
+  <link name="chest">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 .075"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 .075"/>
+    </collision>
+  </link>
+  <link name="right_shoulder">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 -.045 .075"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 -.045 .075"/>
+    </collision>
+  </link>
+  <link name="left_shoulder">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 .045 .075"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 .045 .075"/>
+    </collision>
+  </link>
+  <link name="right_elbow">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 -.05"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 -.05"/>
+    </collision>
+  </link>
+  <link name="left_elbow">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 -.05"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 -.05"/>
+    </collision>
+  </link>
+  <link name="right_hip">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 -.025 -.025"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 -.025 -.025"/>
+    </collision>
+  </link>
+  <link name="left_hip">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 .025 -.025"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 .025 -.025"/>
+    </collision>
+  </link>
+  <link name="right_knee">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 -.06"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 -.06"/>
+    </collision>
+  </link>
+  <link name="left_knee">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 -.06"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 -.06"/>
+    </collision>
+  </link>
+  <link name="right_ankle">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 -.06"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 -.06"/>
+    </collision>
+  </link>
+  <link name="left_ankle">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 -.06"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 -.06"/>
+    </collision>
+  </link>
+  <joint name="body_to_chest" type="fixed">
+    <parent link="body"/>
+    <child link="chest"/>
+  </joint>
+  <joint name="right_shoulder_to_traps" type="fixed">
+    <parent link="traps"/>
+    <child link="right_shoulder"/>
+  </joint>
+  <joint name="left_shoulder_to_traps" type="fixed">
+    <parent link="traps"/>
+    <child link="left_shoulder"/>
+  </joint>
+  <joint name="right_bicep_to_elbow" type="fixed">
+    <parent link="right_bicep"/>
+    <child link="right_elbow"/>
+  </joint>
+  <joint name="left_bicep_to_elbow" type="fixed">
+    <parent link="left_bicep"/>
+    <child link="left_elbow"/>
+  </joint>
+  <joint name="pelvis_to_right_groin" type="fixed">
+    <parent link="pelvis"/>
+    <child link="right_groin"/>
+  </joint>
+  <joint name="pelvis_to_left_groin" type="fixed">
+    <parent link="pelvis"/>
+    <child link="left_groin"/>
+  </joint>
+  <joint name="right_groin_to_right_hip" type="fixed">
+    <parent link="right_groin"/>
+    <child link="right_hip"/>
+  </joint>
+  <joint name="left_groin_to_left_hip" type="fixed">
+    <parent link="left_groin"/>
+    <child link="left_hip"/>
+  </joint>
+  <joint name="right_thigh_to_right_knee" type="fixed">
+    <parent link="right_thigh"/>
+    <child link="right_knee"/>
+  </joint>
+  <joint name="left_thigh_to_left_knee" type="fixed">
+    <parent link="left_thigh"/>
+    <child link="left_knee"/>
+  </joint>
+  <joint name="right_calf_to_right_ankle" type="fixed">
+    <parent link="right_calf"/>
+    <child link="right_ankle"/>
+  </joint>
+  <joint name="left_calf_to_left_ankle" type="fixed">
+    <parent link="left_calf"/>
+    <child link="left_ankle"/>
+  </joint>
+  <joint name="bend_body" type="revolute">
+    <parent link="base_link"/>
+    <child link="body"/>
+    <limit effort="20.0" lower="-1.2" upper="1.2" velocity="20.0"/>
+    <origin xyz="0 0 0"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+  <joint name="twist_lowbody" type="revolute">
+    <parent link="base_link"/>
+    <child link="pelvis"/>
+    <limit effort="20.0" lower="-1.2" upper="1.2" velocity="20.0"/>
+    <origin xyz="0 0 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <joint name="twist_shoulders" type="revolute">
+    <parent link="chest"/>
+    <child link="traps"/>
+    <limit effort="20.0" lower="-1.2" upper="1.2" velocity="20.0"/>
+    <origin xyz="0 0 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <joint name="right_shoulder_lateral" type="revolute">
+    <parent link="right_shoulder"/>
+    <child link="right_bicep"/>
+    <limit effort="20.0" lower="-1.2" upper="1.2" velocity="20.0"/>
+    <origin xyz="0 -.045 .075"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+  <joint name="left_shoulder_lateral" type="revolute">
+    <parent link="left_shoulder"/>
+    <child link="left_bicep"/>
+    <limit effort="20.0" lower="-1.2" upper="1.2" velocity="20.0"/>
+    <origin xyz="0 .045 .075"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+  <joint name="right_elbow_joint" type="revolute">
+    <parent link="right_elbow"/>
+    <child link="right_forearm"/>
+    <limit effort="20.0" lower="-1.2" upper="0" velocity="20.0"/>
+    <origin xyz="0 0 -.05"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+  <joint name="left_elbow_joint" type="revolute">
+    <parent link="left_elbow"/>
+    <child link="left_forearm"/>
+    <limit effort="20.0" lower="-1.2" upper="0" velocity="20.0"/>
+    <origin xyz="0 0 -.05"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+  <joint name="right_hip_flexor" type="revolute">
+    <parent link="right_hip"/>
+    <child link="right_thigh"/>
+    <limit effort="20.0" lower="-1.2" upper="1.2" velocity="20.0"/>
+    <origin xyz="0 -.025 -.025"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+  <joint name="left_hip_flexor" type="revolute">
+    <parent link="left_hip"/>
+    <child link="left_thigh"/>
+    <limit effort="20.0" lower="-1.2" upper="1.2" velocity="20.0"/>
+    <origin xyz="0 .025 -.025"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+  <joint name="right_knee_joint" type="revolute">
+    <parent link="right_knee"/>
+    <child link="right_calf"/>
+    <limit effort="20.0" lower="0" upper="1.2" velocity="20.0"/>
+    <origin xyz="0 0 -.060"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+  <joint name="left_knee_joint" type="revolute">
+    <parent link="left_knee"/>
+    <child link="left_calf"/>
+    <limit effort="20.0" lower="0" upper="1.2" velocity="20.0"/>
+    <origin xyz="0 0 -.060"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+  <joint name="right_ankle_joint" type="revolute">
+    <parent link="right_ankle"/>
+    <child link="right_foot"/>
+    <limit effort="20.0" lower="-0.75" upper="0.76" velocity="20.0"/>
+    <origin xyz="0 0 -.060"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+  <joint name="left_ankle_joint" type="revolute">
+    <parent link="left_ankle"/>
+    <child link="left_foot"/>
+    <limit effort="20.0" lower="-0.75" upper="0.76" velocity="20.0"/>
+    <origin xyz="0 0 -.060"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+</robot>

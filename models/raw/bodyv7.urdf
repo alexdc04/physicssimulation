@@ -1,0 +1,60 @@
+<?xml version="1.0" ?>
+<robot name="arm">
+  <!--METERS-->
+  <link name="torso">
+    <visual>
+      <geometry>
+        <cylinder length="0.5075" radius="0.10149999999999999"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.5075" radius="0.10149999999999999"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+    </collision>
+  </link>
+  <link name="right_thigh">
+    <visual>
+      <geometry>
+        <cylinder length="0.42" radius="0.058800000000000005"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -0.21"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.42" radius="0.058800000000000005"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -0.21"/>
+    </collision>
+  </link>
+  <link name="left_thigh">
+    <visual>
+      <geometry>
+        <cylinder length="0.42" radius="0.058800000000000005"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -0.21"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.42" radius="0.058800000000000005"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -0.21"/>
+    </collision>
+  </link>
+  <joint name="right_hip_flexor" type="revolute">
+    <parent link="torso"/>
+    <child link="right_thigh"/>
+    <limit effort="20.0" lower="-1.2" upper="1.2" velocity="20.0"/>
+    <origin xyz="0.050749999999999997 0 -0.25375"/>
+    <axis xyz="1 0 0"/>
+  </joint>
+  <joint name="left_hip_flexor" type="revolute">
+    <parent link="torso"/>
+    <child link="left_thigh"/>
+    <limit effort="20.0" lower="-1.2" upper="1.2" velocity="20.0"/>
+    <origin xyz="-0.050749999999999997 0 -0.25375"/>
+    <axis xyz="1 0 0"/>
+  </joint>
+</robot>

@@ -1,0 +1,442 @@
+<?xml version="1.0" ?>
+<robot name="arm">
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+    </collision>
+  </link>
+  <link name="body">
+    <visual>
+      <geometry>
+        <cylinder length="0.075" radius="0.0070"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.045"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.075" radius="0.0070"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.045"/>
+    </collision>
+  </link>
+  <joint name="base_to_body" type="fixed">
+    <parent link="base_link"/>
+    <child link="body"/>
+  </joint>
+  <link name="lshoulder">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="-.05 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="-.05 0 0"/>
+    </collision>
+  </link>
+  <link name="ltrap">
+    <visual>
+      <geometry>
+        <cylinder length="0.05" radius="0.0070"/>
+      </geometry>
+      <origin rpy="0 1.57 0" xyz="-.03 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.05" radius="0.0070"/>
+      </geometry>
+      <origin rpy="0 1.57 0" xyz="-.03 0 0"/>
+    </collision>
+  </link>
+  <joint name="base_to_ltrap" type="fixed">
+    <parent link="base_link"/>
+    <child link="ltrap"/>
+  </joint>
+  <joint name="ltrap_to_lshoulder" type="fixed">
+    <parent link="ltrap"/>
+    <child link="lshoulder"/>
+  </joint>
+  <link name="rshoulder">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz=".05 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz=".05 0 0"/>
+    </collision>
+  </link>
+  <link name="rtrap">
+    <visual>
+      <geometry>
+        <cylinder length="0.05" radius="0.0070"/>
+      </geometry>
+      <origin rpy="0 1.57 0" xyz=".03 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.05" radius="0.0070"/>
+      </geometry>
+      <origin rpy="0 1.57 0" xyz=".03 0 0"/>
+    </collision>
+  </link>
+  <joint name="base_to_rtrap" type="fixed">
+    <parent link="base_link"/>
+    <child link="rtrap"/>
+  </joint>
+  <joint name="rtrap_to_rshoulder" type="fixed">
+    <parent link="rtrap"/>
+    <child link="rshoulder"/>
+  </joint>
+  <link name="relbow">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 -.065"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 -.065"/>
+    </collision>
+  </link>
+  <link name="rbicep">
+    <visual>
+      <geometry>
+        <cylinder length="0.065" radius="0.0070"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.035"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.065" radius="0.0070"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.035"/>
+    </collision>
+  </link>
+  <joint name="r_shoulder_bsocket" type="revolute">
+    <parent link="rshoulder"/>
+    <child link="rbicep"/>
+    <limit effort="20.0" lower="-1.2" upper="1.2" velocity="20.0"/>
+    <origin xyz=".05 0 0"/>
+    <axis xyz="1 0 0"/>
+  </joint>
+  <joint name="rb_to_re" type="fixed">
+    <parent link="rbicep"/>
+    <child link="relbow"/>
+  </joint>
+  <link name="lelbow">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 -.065"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 -.065"/>
+    </collision>
+  </link>
+  <link name="lbicep">
+    <visual>
+      <geometry>
+        <cylinder length="0.065" radius="0.0070"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.035"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.065" radius="0.0070"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.035"/>
+    </collision>
+  </link>
+  <joint name="l_shoulder_bsocket" type="revolute">
+    <parent link="lshoulder"/>
+    <child link="lbicep"/>
+    <limit effort="20.0" lower="-1.2" upper="1.2" velocity="20.0"/>
+    <origin xyz="-.05 0 0"/>
+    <axis xyz="1 0 0"/>
+  </joint>
+  <joint name="lb_to_le" type="fixed">
+    <parent link="lbicep"/>
+    <child link="lelbow"/>
+  </joint>
+  <link name="pelvis">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 0"/>
+    </collision>
+  </link>
+  <joint name="swivel_pelvis" type="revolute">
+    <parent link="body"/>
+    <child link="pelvis"/>
+    <limit effort="20.0" lower="0" upper="1.2" velocity="20.0"/>
+    <origin xyz="0 0 -.09"/>
+    <axis xyz="1 0 0"/>
+  </joint>
+  <link name="lglute">
+    <visual>
+      <geometry>
+        <cylinder length="0.025" radius="0.0070"/>
+      </geometry>
+      <origin rpy="0 0.785 0" xyz="-.013 0 -.013"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.025" radius="0.0070"/>
+      </geometry>
+      <origin rpy="0 0.785 0" xyz="-.013 0 -.013"/>
+    </collision>
+  </link>
+  <joint name="lhipcon" type="fixed">
+    <parent link="pelvis"/>
+    <child link="lglute"/>
+  </joint>
+  <link name="rglute">
+    <visual>
+      <geometry>
+        <cylinder length="0.025" radius="0.0070"/>
+      </geometry>
+      <origin rpy="0 -0.785 0" xyz=".013 0 -.013"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.025" radius="0.0070"/>
+      </geometry>
+      <origin rpy="0 -0.785 0" xyz=".013 0 -.013"/>
+    </collision>
+  </link>
+  <joint name="rhipcon" type="fixed">
+    <parent link="pelvis"/>
+    <child link="rglute"/>
+  </joint>
+  <link name="lhip">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz=".025 0 -.025"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz=".025 0 -.025"/>
+    </collision>
+  </link>
+  <joint name="lg_to_lh" type="fixed">
+    <parent link="lglute"/>
+    <child link="lhip"/>
+  </joint>
+  <link name="rhip">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="-.025 0 -.025"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="-.025 0 -.025"/>
+    </collision>
+  </link>
+  <joint name="rg_to_rh" type="fixed">
+    <parent link="rglute"/>
+    <child link="rhip"/>
+  </joint>
+  <link name="lthigh">
+    <visual>
+      <geometry>
+        <cylinder length="0.065" radius="0.0070"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.0325"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.065" radius="0.0070"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.0325"/>
+    </collision>
+  </link>
+  <joint name="lhip_bsocket" type="revolute">
+    <parent link="lhip"/>
+    <child link="lthigh"/>
+    <limit effort="20.0" lower="-1.2" upper="1.2" velocity="20.0"/>
+    <origin xyz="-.025 0 -.03"/>
+    <axis xyz="1 0 0"/>
+  </joint>
+  <link name="rthigh">
+    <visual>
+      <geometry>
+        <cylinder length="0.065" radius="0.0070"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.0325"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.065" radius="0.0070"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.0325"/>
+    </collision>
+  </link>
+  <joint name="rhip_bsocket" type="revolute">
+    <parent link="rhip"/>
+    <child link="rthigh"/>
+    <limit effort="20.0" lower="-1.2" upper="1.2" velocity="20.0"/>
+    <origin xyz=".025 0 -.03"/>
+    <axis xyz="1 0 0"/>
+  </joint>
+  <link name="lknee">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 -.07"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 -.07"/>
+    </collision>
+  </link>
+  <joint name="lt_to_lk" type="fixed">
+    <parent link="lthigh"/>
+    <child link="lknee"/>
+  </joint>
+  <link name="rknee">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 -.07"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 -.07"/>
+    </collision>
+  </link>
+  <joint name="rt_to_rk" type="fixed">
+    <parent link="rthigh"/>
+    <child link="rknee"/>
+  </joint>
+  <link name="lcalf">
+    <visual>
+      <geometry>
+        <cylinder length="0.065" radius="0.0070"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.04"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.065" radius="0.0070"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.04"/>
+    </collision>
+  </link>
+  <joint name="lknee_socket" type="revolute">
+    <parent link="lknee"/>
+    <child link="lcalf"/>
+    <limit effort="20.0" lower="-1.2" upper="0" velocity="20.0"/>
+    <origin xyz="0 0 -.07"/>
+    <axis xyz="1 0 0"/>
+  </joint>
+  <link name="rcalf">
+    <visual>
+      <geometry>
+        <cylinder length="0.065" radius="0.0070"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.04"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.065" radius="0.0070"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 -.04"/>
+    </collision>
+  </link>
+  <joint name="rknee_socket" type="revolute">
+    <parent link="rknee"/>
+    <child link="rcalf"/>
+    <limit effort="20.0" lower="-1.2" upper="0" velocity="20.0"/>
+    <origin xyz="0 0 -.07"/>
+    <axis xyz="1 0 0"/>
+  </joint>
+  <link name="lfoot">
+    <visual>
+      <geometry>
+        <box size="0.03 0.03 0.01"/>
+      </geometry>
+      <origin xyz="0 0 -.07"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.05 0.05 0.01"/>
+      </geometry>
+      <origin xyz="0 0 -.07"/>
+    </collision>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="3.0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <link name="rfoot">
+    <visual>
+      <geometry>
+        <box size="0.03 0.03 0.01"/>
+      </geometry>
+      <origin xyz="0 0 -.07"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.05 0.05 0.01"/>
+      </geometry>
+      <origin xyz="0 0 -.07"/>
+    </collision>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="3.0"/>
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+  </link>
+  <joint name="lankle" type="fixed">
+    <parent link="lcalf"/>
+    <child link="lfoot"/>
+  </joint>
+  <joint name="rankle" type="fixed">
+    <parent link="rcalf"/>
+    <child link="rfoot"/>
+  </joint>
+</robot>
