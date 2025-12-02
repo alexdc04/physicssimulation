@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="unicycle">
+    
+    <xacro:property name="wheel_rad" value="0.02" />
+    <xacro:property name="wheel_len" value="0.005" />
+
+    <xacro:property name="axel_rad" value="0.005" />
+    <xacro:property name="axel_len" value="0.035" />
+
+    <xacro:macro name="axle" params="prefix" >
+        <link name="${prefix}_axle">
+            <visual>
+                <geometry>
+                    <cylinder radius="${axel_rad}" length="${axel_len}"/>
+                </geometry>
+                <origin rpy="0 ${3.14/2} 0"/>
+            </visual>
+                <collision>
+                        <geometry>
+                            <cylinder radius="${axel_rad}" length="${axel_len}"/>
+                        </geometry>
+                        <origin rpy="0 ${3.14/2} 0"/>
+                    </collision>
+                </link>
+    </xacro:macro>
+
+    <xacro:macro name="wheel" params="prefix offset">
+        <link name="${prefix}_wheel">
+            <visual>
+                <geometry>
+                    <cylinder radius="${wheel_rad}" length="${wheel_len}"/>
+                </geometry>
+                <origin xyz="${offset}" rpy="0 ${3.14/2} 0"/>
+            </visual>
+            <collision>
+                <geometry>
+                    <cylinder radius="${wheel_len}" length="${wheel_len}"/>
+                </geometry>
+                <origin xyz="${offset}" rpy="0 ${3.14/2} 0"/>
+            </collision>
+        </link>
+
+    </xacro:macro>
+        
+    
+    
+    <xacro:axle prefix="back"/>
+    <xacro:wheel prefix="right" offset=".02 0 0"/>
+    <xacro:wheel prefix="left" offset="-.02 0 0"/>
+
+    <joint name="r_back_axle" type="revolute">
+        <parent link="back_axle"/>
+        <child link="right_wheel"/>
+        <limit lower="0.0" upper="${2*3.14}" effort="0.0" velocity="0.0"/>
+    </joint>
+    <joint name="l_back_axle" type="revolute">
+        <parent link="back_axle"/>
+        <child link="left_wheel"/>
+        <limit lower="0.0" upper="${2*3.14}" effort="0.0" velocity="0.0"/>
+    </joint>
+    
+    
+
+
+
+
+    
+
+
+
+
+
+</robot>
