@@ -2,15 +2,15 @@ import pybullet as p
 import time
 import pybullet_data
 from xacrodoc import XacroDoc
-
+import os
 def read_xacro(file_name: str) -> str:
     current_file = file_name
 
-    doc = XacroDoc.from_file(f"models\\xacro\\{current_file}.urdf.xacro")
+    doc = XacroDoc.from_file(f"{current_file}.urdf.xacro")
 
     urdf_string = doc.to_urdf_string()
 
-    with open(f"models\\raw\\{current_file}.urdf", "w") as f:
+    with open(f"{current_file}.urdf", "w") as f:
             f.write(urdf_string)
             
     return file_name
