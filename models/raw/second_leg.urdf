@@ -1,0 +1,162 @@
+<?xml version="1.0"?>
+<robot name="myfirst">
+
+    <material name = "red">
+        <color rgba=".8 0 0 1"/>
+    </material>
+
+    <material name = "clear">
+        <color rgba="1 1 1 .5"/>
+    </material>
+    
+    <!-- right leg-->
+    <!-- links -->
+    <link name="right_hip">
+        <visual>
+            <geometry>
+                <box size="0.04 0.04 0.02"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <material name="red"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="0.02 0.02 0.02"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+        </collision>
+        <inertial>
+            <mass value="10"/>
+            <inertia ixx="0.4" ixy="0.0" ixz="0.0" iyy="0.4" iyz="0.0" izz="0.2"/>
+       </inertial>
+    </link>
+
+    <link name="right_thigh">
+        <visual>
+            <geometry>
+                <cylinder radius=".01" length="0.1"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="0 0 -.06"/>
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder radius=".01" length="0.1"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="0 0 -.06"/>
+        </collision>
+        <inertial>
+            <mass value="10"/>
+            <inertia ixx="0.4" ixy="0.0" ixz="0.0" iyy="0.4" iyz="0.0" izz="0.2"/>
+        </inertial>
+    </link>
+
+    <link name="right_calf">
+        <visual>
+            <geometry>
+                <cylinder radius=".01" length="0.1"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="0 0 -0.05"/>
+            <material name="red"/>
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder radius=".01" length="0.1"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="0 0 -0.05"/>
+        </collision>
+        <inertial>
+            <mass value="10"/>
+            <inertia ixx="0.4" ixy="0.0" ixz="0.0" iyy="0.4" iyz="0.0" izz="0.2"/>
+        </inertial>
+    </link>
+
+
+    <!-- joints -->
+    <joint name="right_hip_joint" type="revolute">
+        <parent link="right_hip"/>
+        <child link="right_thigh"/>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <axis xyz="1.0 0.0 0.0"/>
+        <limit lower="-1.25" upper="1.25" effort="0.0" velocity="0.0"/>
+    </joint>
+
+    <joint name="right_knee" type="revolute">
+        <parent link="right_thigh"/>
+        <child link="right_calf"/>
+        <origin rpy="0 0 0" xyz="0 0 -.11"/>
+        <axis xyz="1.0 0.0 0.0"/>
+        <limit lower="-1.25" upper="0" effort="0.0" velocity="0.0"/>
+    </joint>
+
+    <!-- left leg -->
+    <!-- links -->
+    <link name="left_hip">
+        <visual>
+            <geometry>
+                <box size="0.04 0.04 0.02"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz=".05 0 0"/>
+            <material name="red"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="0.04 0.04 0.02"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz=".05 0 0"/>
+        </collision>
+        <inertial>
+            <mass value="10"/>
+            <inertia ixx="0.4" ixy="0.0" ixz="0.0" iyy="0.4" iyz="0.0" izz="0.2"/>
+       </inertial>
+    </link>
+
+    <link name="left_thigh">
+        <visual>
+            <geometry>
+                <cylinder radius=".01" length="0.1"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz=".0 0 -.06"/>
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder radius=".01" length="0.1"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz=".0 0 -.06"/>
+        </collision>
+        <inertial>
+            <mass value="10"/>
+            <inertia ixx="0.4" ixy="0.0" ixz="0.0" iyy="0.4" iyz="0.0" izz="0.2"/>
+        </inertial>
+    </link>
+
+    <link name="left_calf">
+        <visual>
+            <geometry>
+                <cylinder radius=".01" length="0.1"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="0.5 0 -0.05"/>
+            <material name="red"/>
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder radius=".01" length="0.1"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="0.5 0 -0.05"/>
+        </collision>
+        <inertial>
+            <mass value="10"/>
+            <inertia ixx="0.4" ixy="0.0" ixz="0.0" iyy="0.4" iyz="0.0" izz="0.2"/>
+        </inertial>
+    </link>
+
+
+    <!-- joints -->
+
+    <joint name="left_hip_joint" type="revolute">
+        <parent link="left_hip"/>
+        <child link="left_thigh"/>
+        <origin rpy="0 0 0" xyz=".05 0 0"/>
+        <axis xyz="1.0 0.0 0.0"/>
+        <limit lower="-1.25" upper="1.25" effort="0.0" velocity="0.0"/>
+    </joint>
+/</robot>

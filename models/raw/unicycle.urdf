@@ -1,0 +1,55 @@
+<?xml version="1.0" ?>
+<robot name="unicycle">
+  <link name="back_axle">
+    <visual>
+      <geometry>
+        <cylinder length="0.035" radius="0.005"/>
+      </geometry>
+      <origin rpy="0 1.57 0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.035" radius="0.005"/>
+      </geometry>
+      <origin rpy="0 1.57 0"/>
+    </collision>
+  </link>
+  <link name="right_wheel">
+    <visual>
+      <geometry>
+        <cylinder length="0.005" radius="0.02"/>
+      </geometry>
+      <origin rpy="0 1.57 0" xyz=".02 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.005" radius="0.005"/>
+      </geometry>
+      <origin rpy="0 1.57 0" xyz=".02 0 0"/>
+    </collision>
+  </link>
+  <link name="left_wheel">
+    <visual>
+      <geometry>
+        <cylinder length="0.005" radius="0.02"/>
+      </geometry>
+      <origin rpy="0 1.57 0" xyz="-.02 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.005" radius="0.005"/>
+      </geometry>
+      <origin rpy="0 1.57 0" xyz="-.02 0 0"/>
+    </collision>
+  </link>
+  <joint name="r_back_axle" type="revolute">
+    <parent link="back_axle"/>
+    <child link="right_wheel"/>
+    <limit effort="0.0" lower="0.0" upper="6.28" velocity="0.0"/>
+  </joint>
+  <joint name="l_back_axle" type="revolute">
+    <parent link="back_axle"/>
+    <child link="left_wheel"/>
+    <limit effort="0.0" lower="0.0" upper="6.28" velocity="0.0"/>
+  </joint>
+</robot>
