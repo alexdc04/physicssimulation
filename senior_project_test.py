@@ -27,6 +27,7 @@ startPos = [0,0,1.25]
 startOrientation = p.getQuaternionFromEuler([0,0,0])
 dog = p.loadURDF(f"{current_robot}.urdf",startPos, startOrientation)
 p.changeDynamics(bodyUniqueId= dog, linkIndex=-1, lateralFriction=1)
+
 maxForce = 50000
 targetVel=12
 
