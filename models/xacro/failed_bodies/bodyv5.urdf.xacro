@@ -1,0 +1,178 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="arm">
+
+<xacro:macro name="jointy" params="name offset">
+    <link name="${name}">
+        <visual>
+            <geometry>
+                <sphere radius="0.01"/>
+            </geometry>
+            <origin xyz="${offset}"/>
+        </visual>
+        <collision>
+            <geometry>
+                <sphere radius="0.01"/>
+            </geometry>
+            <origin xyz="${offset}"/>
+        </collision>
+    </link>
+</xacro:macro>
+
+<xacro:macro name="limb" params="name length offset rpy">
+    <link name="${name}">
+        <visual>
+            <geometry>
+                <cylinder radius="0.0070" length="${length}"/>
+            </geometry>
+            <origin xyz="${offset}" rpy="${rpy}"/>
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder radius="0.0070" length="${length}"/>
+            </geometry>
+            <origin xyz="${offset}" rpy="${rpy}"/>
+        </collision>
+    </link>
+
+</xacro:macro>
+
+<xacro:macro name="affix" params="name parent child">
+    <joint name="${name}" type="fixed">
+        <parent link="${parent}"/>
+        <child link="${child}"/>
+    </joint>
+</xacro:macro>
+
+<xacro:macro name="revolve" params="name parent child hi lo axis offset">
+    <joint name="${name}" type="revolute">
+        <parent link="${parent}"/>
+        <child link="${child}"/>
+        <limit lower="${lo}" upper="${hi}" effort="20.0" velocity="20.0"/>
+        <origin xyz="${offset}"/>
+        <axis xyz="${axis}"/>
+    </joint>
+</xacro:macro>
+
+<link name="base_link">
+    <visual>
+        <geometry>
+            <sphere radius="0.01"/>
+        </geometry>
+    </visual>
+    <collision>
+        <geometry>
+            <sphere radius="0.01"/>
+        </geometry>
+    </collision>
+</link>
+
+
+
+
+<xacro:limb name="body" length=".075" offset="0 0 -.045" rpy="0 0 0"/>
+<xacro:affix name="base_to_body" parent="base_link" child="body"/>
+
+<xacro:jointy name="lshoulder" offset="-.05 0 0"/> 
+<xacro:limb name="ltrap" length=".05" offset="-.03 0 0" rpy="0 ${3.14/2} 0"/>
+<xacro:affix name="base_to_ltrap" parent="base_link" child="ltrap"/>
+<xacro:affix name="ltrap_to_lshoulder" parent="ltrap" child="lshoulder"/>
+
+<xacro:jointy name="rshoulder" offset=".05 0 0"/> 
+<xacro:limb name="rtrap" length=".05" offset=".03 0 0" rpy="0 ${3.14/2} 0"/>
+<xacro:affix name="base_to_rtrap" parent="base_link" child="rtrap"/>
+<xacro:affix name="rtrap_to_rshoulder" parent="rtrap" child="rshoulder"/>
+
+<xacro:jointy name="relbow" offset="0 0 -.065"/> 
+<xacro:limb name="rbicep" length=".065" offset="0 0 -.035" rpy="0 0 0"/>
+<xacro:revolve name="r_shoulder_bsocket" parent="rshoulder" 
+        child="rbicep" lo="-1.2" hi="1.2" axis="1 0 0" offset=".05 0 0"/>
+<xacro:affix name="rb_to_re" parent="rbicep" child="relbow"/>
+
+<xacro:jointy name="lelbow" offset="0 0 -.065"/> 
+<xacro:limb name="lbicep" length=".065" offset="0 0 -.035" rpy="0 0 0"/>
+<xacro:revolve name="l_shoulder_bsocket" parent="lshoulder" 
+        child="lbicep" lo="-1.2" hi="1.2" axis="1 0 0" offset="-.05 0 0"/>
+<xacro:affix name="lb_to_le" parent="lbicep" child="lelbow"/>
+
+<xacro:jointy name="pelvis" offset="0 0 0"/>
+<xacro:revolve name="swivel_pelvis" parent="body" 
+        child="pelvis" lo="-1.2" hi="1.2" axis="0 0 1" offset="0 0 -.09"/>
+
+<xacro:limb name="lglute" length=".025" offset="-.013 0 -.013" rpy="0 ${3.14/4} 0"/>
+<xacro:affix name="lhipcon" parent='pelvis' child="lglute"/>
+
+<xacro:limb name="rglute" length=".025" offset=".013 0 -.013" rpy="0 -${3.14/4} 0"/>
+<xacro:affix name="rhipcon" parent='pelvis' child="rglute"/>
+
+<xacro:jointy name="lhip" offset=".025 0 -.025"/>
+<xacro:affix name="lg_to_lh" parent='lglute' child="lhip"/>
+
+<xacro:jointy name="rhip" offset="-.025 0 -.025"/>
+<xacro:affix name="rg_to_rh" parent='rglute' child="rhip"/>
+
+<xacro:limb name="lthigh" length=".065" offset="0 0 -.0325" rpy="0 0 0"/>
+<xacro:revolve name="lhip_bsocket" parent="lhip" 
+        child="lthigh" lo="-1.2" hi="1.2" axis="1 0 0" offset="-.025 0 -.03"/>
+
+<xacro:limb name="rthigh" length=".065" offset="0 0 -.0325" rpy="0 0 0"/>
+<xacro:revolve name="rhip_bsocket" parent="rhip" 
+        child="rthigh" lo="-1.2" hi="1.2" axis="1 0 0" offset=".025 0 -.03"/>
+
+<xacro:jointy name="lknee" offset="0 0 -.07"/>
+<xacro:affix name="lt_to_lk" parent='lthigh' child="lknee"/>
+
+<xacro:jointy name="rknee" offset="0 0 -.07"/>
+<xacro:affix name="rt_to_rk" parent='rthigh' child="rknee"/>
+
+<xacro:limb name="lcalf" length=".065" offset="0 0 -.04" rpy="0 0 0"/>
+<xacro:revolve name="lknee_socket" parent="lknee" 
+        child="lcalf" lo="-1.2" hi="0" axis="1 0 0" offset="0 0 -.07"/>
+
+<xacro:limb name="rcalf" length=".065" offset="0 0 -.04" rpy="0 0 0"/>
+<xacro:revolve name="rknee_socket" parent="rknee" 
+        child="rcalf" lo="-1.2" hi="0" axis="1 0 0" offset="0 0 -.07"/>
+        
+<link name="lfoot">
+    <visual>
+        <geometry>
+            <box size="0.03 0.03 0.01"/>
+        </geometry>
+        <origin xyz="0 0 -.07"/>
+    </visual>
+    <collision>
+        <geometry>
+            <box size="0.05 0.05 0.01"/>
+        </geometry>
+        <origin xyz="0 0 -.07"/>
+    </collision>
+    <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="3.0"/>
+        <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+</link>
+
+<link name="rfoot">
+    <visual>
+        <geometry>
+            <box size="0.03 0.03 0.01"/>
+        </geometry>
+        <origin xyz="0 0 -.07"/>
+    </visual>
+    <collision>
+        <geometry>
+            <box size="0.05 0.05 0.01"/>
+        </geometry>
+        <origin xyz="0 0 -.07"/>
+    </collision>
+    <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="3.0"/>
+        <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+    </inertial>
+</link>
+
+<xacro:affix name="lankle" parent="lcalf" child="lfoot"/>
+<xacro:affix name="rankle" parent="rcalf" child="rfoot"/>
+
+</robot>

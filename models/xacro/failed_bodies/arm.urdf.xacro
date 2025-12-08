@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="arm">
+    
+    <xacro:property name="bi_len" value="0.2" />
+    <xacro:property name="wheel_len" value="0.005" />
+
+    <xacro:macro name="limb" params="prefix offset" >
+        <link name="${prefix}_limb">
+            <visual>
+                <geometry>
+                    <box size="${bi_len} ${bi_len / 4} ${bi_len / 4}"/>
+                </geometry>
+                <origin xyz="${offset}"/>
+            </visual>
+            <collision>
+                <geometry>
+                    <box size="${bi_len} ${bi_len / 4} ${bi_len / 4}"/>
+                </geometry>
+                <origin xyz="${offset}"/>
+            </collision>
+        </link>
+    </xacro:macro>
+
+    <xacro:macro name="joint_mesh" params="name offset">
+        <link name="${name}">
+            <visual>
+                <geometry>
+                    <box size="${bi_len / 4} ${bi_len / 4} ${bi_len / 4}"/>
+                </geometry>
+                <origin xyz="${offset}"/>
+                <material>
+                    <color rgba="1 0 0 1"/>
+                </material>
+            </visual>
+        </link>
+    </xacro:macro>
+
+    
+    <xacro:limb prefix="right" offset="0 0 0"/> 
+    <xacro:limb prefix="far_right" offset=".1 0 0"/> 
+
+    <joint name="elbow_joint" type="revolute">
+        <parent link="right_limb"/>
+        <child link="far_right_limb"/>
+        <limit lower="-1.2" upper="0" effort="0.0" velocity="0.0"/>
+        <origin xyz = ".1 0 0"/>
+        <axis xyz="0.0 1 0.0"/>
+    </joint>
+
+
+
+</robot>

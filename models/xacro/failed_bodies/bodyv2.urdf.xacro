@@ -1,0 +1,113 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="arm">
+    
+    <xacro:property name="leg_len" value="0.1" />
+    <xacro:property name="body_len" value="0.2" />
+
+    <xacro:macro name="limb" params="name side offset rpy">
+        <link name="${side}_${name}">
+            <visual>
+                <geometry>
+                    <box size="${leg_len/8} ${leg_len / 8} ${leg_len/2}"/>
+                </geometry>
+                <origin xyz="${offset}" rpy="${rpy}"/>
+            </visual>
+            <collision>
+                <geometry>
+                    <box size="${leg_len/8} ${leg_len / 8} ${leg_len/2}"/>
+                </geometry>
+                <origin xyz="${offset}"/>
+            </collision>
+        </link>
+    </xacro:macro> 
+
+    <xacro:macro name="connection" params="name limb1 limb2 lo hi offset">
+        <joint name="${name}" type="revolute">
+            <parent link="${limb1}"/>
+            <child link="${limb2}"/>
+            <limit lower="${lo}" upper="${hi}" effort="0.0" velocity="0.0"/>
+            <origin xyz="${offset}"/>
+        </joint>
+    </xacro:macro>
+
+    <link name="base_link">
+        <visual>
+            <geometry>
+                <box size=".025 .05 ${body_len/2}"/>
+            </geometry>
+            <origin rpy="0 0 ${3.14/2}"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size=".025 .05 ${body_len/2}"/>
+            </geometry>
+            <origin rpy="0 0 ${3.14/2}"/>
+        </collision>
+    </link>
+
+
+    <link name="right_foot">
+        <visual>
+            <geometry>
+                <box size=".01 .04 .01"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <box size=".01 .04 .01"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <link name="left_foot">
+        <visual>
+            <geometry>
+                <box size=".01 .04 .01"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <box size=".01 .04 .01"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <!--offset=".015 .005 -.075"-->
+    <xacro:limb name="thigh" side="right" offset="0 0 -.025" rpy=".05 0 0"/>
+    
+    <xacro:limb name="thigh" side="left" offset="0 0 -.025" rpy=".05 0 0"/>
+    
+    <xacro:connection name="right_hip" limb1="base_link" limb2="right_thigh" lo="-1.2" hi="1.2" offset=".015 0 -.05"/>
+
+    <xacro:connection name="left_hip" limb1="base_link" limb2="left_thigh" lo="-1.2" hi="1.2" offset="-.015 0 -.05"/>
+
+    <xacro:limb name="calf" side="right" offset="0 0 -.025" rpy="-.05 0 0"/>
+
+    <xacro:limb name="calf" side="left" offset="0 0 -.025" rpy="-.05 0 0"/>
+
+    <xacro:connection name="right_knee" limb1="right_thigh" limb2="right_calf" lo="-1.2" hi="0" offset="0 .0025 -.05"/>
+
+    <xacro:connection name="left_knee" limb1="left_thigh" limb2="left_calf" lo="-1.2" hi="0" offset="0 .0025 -.05"/>
+
+    <xacro:connection name="right_ankle" limb1="right_calf" limb2="right_foot" lo="-1.2" hi=".5" offset="0 .004 -.050"/>
+    
+    <xacro:connection name="left_ankle" limb1="left_calf" limb2="left_foot" lo="-1.2" hi=".5" offset="0 .004 -.050"/>
+    
+    <xacro:limb name="bicep" side="right" offset="0 0 -.025" rpy=".05 0 0"/>
+    
+    <xacro:limb name="bicep" side="left" offset="0 0 -.025" rpy=".05 0 0"/>
+
+    <xacro:connection name="right_shoulder" limb1="base_link" limb2="right_bicep" lo="-1.2" hi="1.2" offset="0.032 .0 .05"/>
+
+    <xacro:connection name="left_shoulder" limb1="base_link" limb2="left_bicep" lo="-1.2" hi="1.2" offset="-0.032 .0 .05"/>
+
+    <xacro:limb name="forearm" side="right" offset="0 0 -.025" rpy=".05 0 0"/>
+    
+    <xacro:limb name="forearm" side="left" offset="0 0 -.025" rpy=".05 0 0"/>
+
+    <xacro:connection name="right_elbow" limb1="right_bicep" limb2="right_forearm" lo="0" hi="1.2" offset="0.0 .0 -.05"/>
+
+    <xacro:connection name="left_elbow" limb1="left_bicep" limb2="left_forearm" lo="0" hi="1.2" offset="0.0 .0 -.05"/>
+
+    
+</robot>

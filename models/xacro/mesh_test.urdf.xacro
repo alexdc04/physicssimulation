@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="arm">
+    <link name="test">
+        <visual>
+            <geometry>
+                <mesh filename="meshes/cube.stl" scale="1 1 1"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="meshes/cube.stl" scale="1 1 1"/>
+            </geometry>
+        </collision>
+    </link>
+
+
+
+
+    
+</robot>
