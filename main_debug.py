@@ -27,7 +27,7 @@ def check_pos(agent: int) -> str:
     return p.getBasePositionAndOrientation(agent)
 
 # Initial Params
-current_robot=read_xacro("unicycle")
+current_robot=read_xacro("dogv1")
 current_environment="plane"
 time_interval = .1 #seconds
 
@@ -51,21 +51,22 @@ joints_dict={}
 for num in range (numOfJoints):
     if p.getJointInfo(agent, num)[2] != p.JOINT_FIXED:
         joints_dict[p.getJointInfo(agent, num)[0]]=(p.getJointInfo(agent, num)[1])
-print(joints_dict)
+# print(joints_dict)
 joints=list(joints_dict.keys())
-
-
 
 time_index_last = time.time()
 while True:
+    # Failure Condition. If contact is made, sim exits.
+    failure = p.getContactPoints(bodyA=planeId, bodyB=agent, linkIndexA=-1, linkIndexB=-1 ) #base link = -1
+    
     if time.time() - time_index_last >= time_interval:  
         p.setJointMotorControl2(agent, random.choice(joints), controlMode=p.POSITION_CONTROL, targetPosition=random.uniform(-1.2, 1.2), force=p.readUserDebugParameter(f_slider))
         time_index_last = time.time()
-        
+    
     p.stepSimulation()
     time.sleep(1./240.)
-    
-    if p.readUserDebugParameter(kill_sim) > 0:
+        
+    if p.readUserDebugParameter(kill_sim) > 0 or len(failure) > 0:
         p.disconnect()
         break
 

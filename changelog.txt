@@ -4,3 +4,5 @@ Debug better organized. Added kill switch, simplifed sliders.
 Agent will randomly move a joint at random per chosen interval
 
 Implemented changes from debug branch into main branch
+
+Added failure condition
