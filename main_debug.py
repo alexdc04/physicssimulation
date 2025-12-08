@@ -39,6 +39,7 @@ time_interval = .1 #seconds
 min_force, max_force = 1, 200
 start_time=time.time()
 stats={"Dist": [], "Failed":[]}
+duration=5 #Seconds
 
 # Initialize the physics sim
 physicsClient = p.connect(p.GUI) #or p.DIRECT for non-graphical version
@@ -96,22 +97,22 @@ def sum_stats():
     )
     sum_graph.set_axis_labels("Ticks", "Meters") 
     plt.show()
-    
+
 while True:
     # Failure Condition. If contact is made, sim exits.
     failure = p.getContactPoints(bodyA=planeId, bodyB=agent, linkIndexA=-1, linkIndexB=-1 ) #base link = -1
+    run_time = time.time() - start_time
     
     if time.time() - time_index_last >= time_interval:  
         
         time_index_last = time.time()
         move_multi_joints_random(agent=agent, joint_indexes=joints)
         debug_stats(agent=agent, show=False)
-        #p.setJointMotorControl2(agent, random.choice(joints), controlMode=p.POSITION_CONTROL, targetPosition=random.uniform(-1.2, 1.2), force=p.readUserDebugParameter(f_slider))
         
     p.stepSimulation()
     time.sleep(1./240.)
     
-    if p.readUserDebugParameter(kill_sim) > 0 or p.readUserDebugParameter(enable_fail_con) > 0:
+    if p.readUserDebugParameter(kill_sim) > 0 or p.readUserDebugParameter(enable_fail_con) > 0 or run_time >= duration:
         p.disconnect()
         break
 

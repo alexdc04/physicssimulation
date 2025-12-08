@@ -11,3 +11,5 @@ Added Random Movement for multiple joints with params:
 Joint, Dist, Force
 
 Added stats for debugging, and summary line graph with respect to distance
+
+Added Time limit support easily
