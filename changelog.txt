@@ -6,3 +6,8 @@ Agent will randomly move a joint at random per chosen interval
 Implemented changes from debug branch into main branch
 
 Added failure condition
+
+Added Random Movement for multiple joints with params:
+Joint, Dist, Force
+
+Added stats for debugging, and summary line graph with respect to distance
