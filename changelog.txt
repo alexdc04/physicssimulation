@@ -13,3 +13,5 @@ Joint, Dist, Force
 Added stats for debugging, and summary line graph with respect to distance
 
 Added Time limit support easily
+
+Goal: First make a model that chooses limbs to move.
