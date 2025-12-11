@@ -14,6 +14,7 @@ from itertools import count
 import seaborn as sns
 import torch.nn as nn
 import torch.optim as optim
+import numpy as np
 
 def read_xacro(file_name: str) -> str:
     current_file = file_name
@@ -34,8 +35,11 @@ def get_dist_from_origin(agent: int) -> float:
     xyz=p.getLinkState(agent, 0)[0]
     return math.sqrt((xyz[0])**2 + (xyz[1])**2)
 
-def initialize():
-    out = p.connect(p.GUI)
+def initialize(view=True):
+    if view:
+        out = p.connect(p.GUI)
+    else:
+        out = p.connect(p.DIRECT)
     p.setAdditionalSearchPath(pybullet_data.getDataPath())
     return out
 
@@ -44,8 +48,6 @@ def load_sim(raw_agent: str, raw_env: str) -> tuple:
 
     p.setGravity(0,0,-9.81)
     print(f"{raw_env}.urdf here here here")
-    startPos = [0,0,1.25]
-    startOrientation = p.getQuaternionFromEuler([0,0,0])
     agentId = p.loadURDF(f"{raw_agent}.urdf",startPos, startOrientation)
     p.changeDynamics(bodyUniqueId= agentId, linkIndex=-1, lateralFriction=1)
     return agentId, p.loadURDF(f"{raw_env}.urdf"), time.time()
@@ -84,18 +86,42 @@ def episode(raw_agent: str, raw_env: str):
     p.resetSimulation()
     return load_sim(raw_agent, raw_env)
 
-class PolicyNetwork(nn.Module):
-    def __init__(self):
-        super(PolicyNetwork, self).__init__()
-        self.fc = nn.Sequential(
-            nn.Linear(4, 128),
-            nn.ReLU(),
-            nn.Linear(128, 2),
-            nn.Softmax(dim=-1),
-        )
-    def forward(self, x):
-        return self.fc(x)
+class Agent():
+    def __init__(self, model):
+        self.body=read_xacro(model)
+        self.agent_id=self.spawn()
+        self.num_joints= p.getNumJoints(self.agent_id)
+        self.joints_dict={}
+        self.joint_values=[]
+        self.labels=[]
+        
+        
+    def spawn(self):
+        return p.loadURDF(f"{self.body}.urdf",startPos, startOrientation)
+        
+    def get_id(self):
+        return self.agent_id
     
+    def get_joint_dict(self):
+        return self.joints_dict
+    
+    def get_joint_values(self):
+        return self.joint_values
+    
+    def init_joint_data(self):
+        for num in range (self.num_joints):
+            if p.getJointInfo(self.agent_id, num)[2] != p.JOINT_FIXED:
+                self.joints_dict[p.getJointInfo(self.agent_id, num)[0]]=(p.getJointInfo(self.agent_id, num)[1])
+        self.labels=list(self.joints_dict.keys())
+        self.update_joint_values()
+
+    def update_joint_values(self):
+        self.joint_values = np.array(list(map(lambda x: x[0], p.getJointStates(self.agent_id, jointIndices=self.labels))))
+        print(self.joint_values)
+
+startPos = [0,0,1.25]
+startOrientation = p.getQuaternionFromEuler([0,0,0])  
+
 # Initial Params
 current_agent=read_xacro("bodyv6")
 current_environment="plane"
@@ -103,6 +129,7 @@ physicsClient= initialize()
 time_interval = .1 #seconds
 min_force, max_force = 1, 200
 stats={"Dist": [], "Failed":[]}
+actions={"forward": 1.2, "reset": 0, 'backward': -1.2}
 duration=5 # Seconds
 episodes=5
 agentId, planeId, start_time=load_sim(current_agent, current_environment)
@@ -113,14 +140,16 @@ kill_sim = p.addUserDebugParameter(paramName="Stop Simulation",rangeMin=1,rangeM
 enable_fail_con = p.addUserDebugParameter(paramName="Enable Fail Condition",rangeMin=1,rangeMax=-1, startValue=0)
 
 # Gets active joints and indexes them with name in dict
-numOfJoints = p.getNumJoints(agentId)
-joints_dict={}
-for num in range (numOfJoints):
-    if p.getJointInfo(agentId, num)[2] != p.JOINT_FIXED:
-        joints_dict[p.getJointInfo(agentId, num)[0]]=(p.getJointInfo(agentId, num)[1])
-# print(joints_dict)
-joints=list(joints_dict.keys())
 time_index_last = time.time()
+
+# print(joints_dict)
+# q_table=pd.DataFrame(columns=(joints_dict))
+# q_table['Move']=None
+
+test = Agent('bodyv6')
+test.init_joint_data()
+print(test.get_joint_values())
+#test.update_joint_values()
 
 # AI model will be able to choose how many joints, which joints, and how strong
 # This current functions choices are just random
@@ -128,12 +157,11 @@ while True:
     # Failure Condition. If contact is made, sim exits.
     failure = p.getContactPoints(bodyA=planeId, bodyB=agentId, linkIndexA=-1, linkIndexB=-1 ) #base link = -1
     run_time = time.time() - start_time
+    test.update_joint_values()
     
     if time.time() - time_index_last >= time_interval:  
         
         time_index_last = time.time()
-        move_multi_joints_random(agent=agentId, joint_indexes=joints)
-        debug_stats(agent=agentId, show=False)
         
     p.stepSimulation()
     time.sleep(1./240.)
@@ -145,9 +173,8 @@ while True:
         p.disconnect()
         break
 
+# for ep in range(episodes):
+#     failure = p.getContactPoints(bodyA=planeId, bodyB=agentId, linkIndexA=-1, linkIndexB=-1)
+#     runtime_start=time.time()
+# sum_stats()
 
-
-for ep in range(episodes):
-    failure = p.getContactPoints(bodyA=planeId, bodyB=agentId, linkIndexA=-1, linkIndexB=-1)
-    runtime_start=time.time()
-sum_stats()
