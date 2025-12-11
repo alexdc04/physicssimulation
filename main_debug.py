@@ -15,6 +15,8 @@ import seaborn as sns
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
+import pickle
+from pathlib import Path
 
 def read_xacro(file_name: str) -> str:
     current_file = file_name
@@ -86,16 +88,33 @@ def episode(raw_agent: str, raw_env: str):
     p.resetSimulation()
     return load_sim(raw_agent, raw_env)
 
+def save_agent(agent: Agent):
+    file_path=f"agents/{agent.get_name()}.pkl"
+    with open(file_path, 'wb') as f:
+        pickle.dump(agent, f)
+
+def load_agent(name: str):
+    file_path=Path(f"agents/{name}.pkl")
+    if file_path.is_file():
+        with open(file_path, 'rb') as f:
+            return pickle.load(f)
+    else:
+        raise AgentNotFound("Invalid Agent Name")
+
 class Agent():
-    def __init__(self, model):
+    def __init__(self, model, name):
+        self.name=name
         self.body=read_xacro(model)
         self.agent_id=self.spawn()
-        self.num_joints= p.getNumJoints(self.agent_id)
         self.joints_dict={}
         self.joint_values=[]
         self.labels=[]
-        
-        
+        self.num_joints= p.getNumJoints(self.agent_id)
+        self.initalize()
+    
+    def get_name(self):
+        return self.name
+    
     def spawn(self):
         return p.loadURDF(f"{self.body}.urdf",startPos, startOrientation)
         
@@ -108,7 +127,7 @@ class Agent():
     def get_joint_values(self):
         return self.joint_values
     
-    def init_joint_data(self):
+    def initalize(self):
         for num in range (self.num_joints):
             if p.getJointInfo(self.agent_id, num)[2] != p.JOINT_FIXED:
                 self.joints_dict[p.getJointInfo(self.agent_id, num)[0]]=(p.getJointInfo(self.agent_id, num)[1])
@@ -118,6 +137,18 @@ class Agent():
     def update_joint_values(self):
         self.joint_values = np.array(list(map(lambda x: x[0], p.getJointStates(self.agent_id, jointIndices=self.labels))))
         print(self.joint_values)
+
+class AgentNotFound(Exception):
+    """A custom exception class for specific errors."""
+    pass
+
+
+
+
+
+
+
+
 
 startPos = [0,0,1.25]
 startOrientation = p.getQuaternionFromEuler([0,0,0])  
@@ -142,14 +173,9 @@ enable_fail_con = p.addUserDebugParameter(paramName="Enable Fail Condition",rang
 # Gets active joints and indexes them with name in dict
 time_index_last = time.time()
 
-# print(joints_dict)
-# q_table=pd.DataFrame(columns=(joints_dict))
-# q_table['Move']=None
-
-test = Agent('bodyv6')
-test.init_joint_data()
-print(test.get_joint_values())
-#test.update_joint_values()
+prototype = load_agent('prototype')
+print(prototype.get_joint_values())
+save_agent(prototype)
 
 # AI model will be able to choose how many joints, which joints, and how strong
 # This current functions choices are just random
@@ -157,7 +183,6 @@ while True:
     # Failure Condition. If contact is made, sim exits.
     failure = p.getContactPoints(bodyA=planeId, bodyB=agentId, linkIndexA=-1, linkIndexB=-1 ) #base link = -1
     run_time = time.time() - start_time
-    test.update_joint_values()
     
     if time.time() - time_index_last >= time_interval:  
         
