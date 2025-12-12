@@ -2,7 +2,6 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="arm">
 
 
-    
 <xacro:macro name="jointy" params="name offset">
     <link name="${name}">
         <visual>
