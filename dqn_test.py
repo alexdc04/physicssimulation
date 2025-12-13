@@ -9,7 +9,7 @@ from collections import deque
 # Our map will be a 8x8 grid with a bad squares, empty squares, and a goal square.
 grid=np.zeros(shape=(8, 8))
 bounds={x: 0 for x in range(0, 8)}
-goal=np.array([7, 7])
+goal=np.array[7, 7]
 found=False
 print(bounds)
 for row in grid:
@@ -46,12 +46,12 @@ while not found:
     for x in range(25):
         curr_pos = move(curr_pos,(random.sample(dirs, 1)[0]))
         moved.append(curr_pos)
-        if (curr_pos[0] == 7 and curr_pos[1] == 7) :
+        if curr_pos == goal:
             found=True
             break
 
-print(moved)
-print(grid)
+
+
 
 
 

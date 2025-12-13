@@ -230,19 +230,19 @@ def dqn_train(vis_env: Environment, dir_env: Environment, agent: Agent, pn: Neur
         curr_env.clear()
         
         training_batch = replay.sample(batch_size)
-        sum=torch.zeros(size=(1, 3))
+        sum=0
         n=len(training_batch)//2
         
         for x in range(0, len(training_batch) , 2):
             step1=training_batch[x]
             step2=training_batch[x+1]
             
-            guess=policy_1(step1[0])
-            target=target_1(step2[0])
+            guess=(pn(step1[0])[0])[step1[1]]
+            target=(tn(step2[0])[0]).max()
             
-            sum+=(target[0] - guess[0])**2
+            sum+=((step2[2]+(discount*target)) - guess)**2
             # Backward pass
-        mse=(sum/n).sum()
+        mse=(sum/n)
         po.zero_grad() 
         mse.backward()  
         po.step()  
@@ -251,7 +251,7 @@ def dqn_train(vis_env: Environment, dir_env: Environment, agent: Agent, pn: Neur
             
             to.step()  
         
-        #print(mse)
+        print(episode, mse)
         
 
 
@@ -285,32 +285,34 @@ target_optim = torch.optim.SGD(target_1.parameters(), lr=0.01)
 epsilon= .75
 discount= 1
 update_steps= 4
-episodes=5
-batch_size=100
-view_interval=1000000
-time_steps=10
+episodes=100
+batch_size=500
+view_interval=250
+time_steps=1000
 
 actions=[-5, 0, 5]
-
 dqn_train(vis_env=gui_sim, dir_env=direct_sim, agent=prototype_agent, pn=policy_1, tn=target_1, epsilon=epsilon, 
             episodes=episodes, time_steps=time_steps, view_interval=view_interval, actions=actions, batch_size=batch_size, replay=replay_memory,
             po=pol_optim, to=target_optim)
 
-torch.save(policy_1.state_dict, "nn_models/pol_net.pth")
-torch.save(target_1.state_dict, "nn_models/target_net.pth")
+# torch.save(policy_1.state_dict, "nn_models/pol_net.pth")
+# torch.save(target_1.state_dict, "nn_models/target_net.pth")
+# tick=0
+prototype_agent.set_p(gui_sim.get_p())
+prototype_agent.spawn()
 tick=0
-
 
 if __name__ == "__main__":
     print("done")
-    # while True:
-    #     tick+=1
-    #     prototype_agent.move(policy_1.forward(prototype_agent.get_state()), random.sample(joints, 1)[0])
-    #     gui_sim.step()
+    while True:
+        tick+=1
+        prototype_agent.move(policy_1.forward(prototype_agent.get_state())[1], random.sample(joints, 1)[0])
+        gui_sim.step()
         
-    #     if tick % 1000 == 0:
-    #         print(f"Gui: {gui_sim.status()}\nDirect: {direct_sim.status()}")
-
+        if tick % 1000 == 0:
+            print(prototype_agent.get_dist())
+            gui_sim.clear()
+            prototype_agent.spawn() 
 
 
 
