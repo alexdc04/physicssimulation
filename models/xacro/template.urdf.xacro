@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="Template">
+
+<xacro:property name="total_weight" value="20" /> <!--KG-->
+<xacro:property name="torso_weight" value="${total_weight * 0.5}" />
+<xacro:property name="leg_weight" value="${(total_weight - torso_weight) * 0.25}" />
+<xacro:property name="torso_length" value="2.5"/> <!--Meters-->
+<xacro:property name="leg_length" value="1.5"/>
+
+<xacro:macro name="solid_sphere_inertia_tensors" params="mass radius" >
+    <inertial>
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+        <mass value="${weight}"/>
+        <inertia 
+        ixx="${(2/5) * mass * radius * radius}" ixy="0.0" ixz="0.0" 
+        iyy="${(2/5) * mass * radius * radius}" iyz="0.0" 
+        izz="${(2/5) * mass * radius * radius}  "/>
+    </inertial>
+</xacro:macro>
+
+<xacro:macro name="hollow_sphere_inertia_tensors" params="mass radius" >
+    <inertial>
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+        <mass value="${weight}"/>
+        <inertia 
+        ixx="${(2/3) * mass * radius * radius}" ixy="0.0" ixz="0.0" 
+        iyy="${(2/3) * mass * radius * radius}" iyz="0.0" 
+        izz="${(2/3) * mass * radius * radius}  "/>
+    </inertial>
+</xacro:macro>
+
+<xacro:macro name="cuboid_inertia_tensors" params="weight length" >
+    <inertial>
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+        <mass value="${weight}"/>
+        <inertia 
+        ixx="${(weight/12)*((length*length*.025)+(length*length*0.0225))}" ixy="0.0" ixz="0.0" 
+        iyy="${(weight/12)*((length*length)+(length*length*0.0225))}" iyz="0.0" 
+        izz="${(weight/12)*((length*length)+(length*length*0.025))}"/>
+    </inertial>
+</xacro:macro>
+
+
+
+</robot>

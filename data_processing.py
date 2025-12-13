@@ -31,3 +31,7 @@ def load_data(name: str, dir: str):
 class AgentNotFound(Exception):
     """A custom exception class for specific errors."""
     pass
+
+class InactiveSim(Exception):
+    """A custom exception class for specific errors."""
+    pass
