@@ -55,18 +55,22 @@ class Agent():
         xyz=self.p.getLinkState(self.agent_id, 0)[0]
         return math.sqrt((xyz[0])**2 + (xyz[1])**2)
     
-    def spawn(self, phys_id):
-        self.p.loadURDF(fileName=(read_xacro(self.model)), physicsClientId=phys_id, basePosition=self.start_pos)
+    def set_p(self, p):
+        self.p=p
+        
+    def spawn(self):
+        self.p.loadURDF(fileName=(read_xacro(self.model)), basePosition=self.start_pos)
         self.p.changeDynamics(bodyUniqueId= self.agent_id, linkIndex=-1, lateralFriction=1)
     
-    def reset(self, phys_id):
+    def reset(self):
         self.p.resetBasePositionAndOrientation(self.agent_id, posObj=startPos, ornObj=ornPos)
         
-    def move(self, vel, joint):
+    def move(self, choice, joint):
+        actions=[-5, 0, 5]
         self.p.setJointMotorControl2(bodyUniqueId = self.agent_id, 
                                 jointIndex=joint, 
                                 controlMode=self.p.VELOCITY_CONTROL, 
-                                targetVelocity=vel, 
+                                targetVelocity=actions[choice], 
                                 force=max_force)
 
 class NeuralNetwork(nn.Module):
@@ -98,8 +102,8 @@ class ReplayMemory(object):
         
         Args:
             s_t(torch.tensor): State at step t.
-            r_t(float): Calculated reward at step t.
             a_t(float): Action chosen at step t.
+            r_t(float): Calculated reward at step t.
             s_t+1(torch.tensor): Observed state at step t+1.
             
         '''
@@ -128,7 +132,10 @@ class Environment():
             return bc.BulletClient(connection_mode=(p.GUI))
         else:
             return bc.BulletClient(connection_mode=(p.DIRECT))
-        
+    
+    def get_render(self):
+        return self.render
+    
     def get_p(self):
         '''Gives bullet client instance.'''
         return self.p
@@ -177,7 +184,7 @@ class Environment():
         if self.render: time.sleep(1./240.)
 
 def dqn_train(vis_env: Environment, dir_env: Environment, agent: Agent, pn: NeuralNetwork, tn: NeuralNetwork, epsilon: float, 
-                episodes: int, time_steps: int, view_interval: int, actions: list, batch_size: int):
+                episodes: int, time_steps: int, view_interval: int, actions: list, batch_size: int, replay: ReplayMemory, po: optim, to: optim):
     '''
     This method trains the DQN. It works in 2 stages:\n
     1. Choses action based on greedy epsilon algo. Saves each time step to Replay Memory.
@@ -196,12 +203,56 @@ def dqn_train(vis_env: Environment, dir_env: Environment, agent: Agent, pn: Neur
         actions(list): List of actions possible.
         batch_size(int): How many samples to train on.
     '''
-    
-    
-    
-    print("placeholder")
-    
-
+    mse=0
+    for episode in range(episodes):
+        
+        curr_env=vis_env if episode % view_interval == 0 else dir_env
+        curr_env.clear()
+        
+        agent.set_p(curr_env.get_p())
+        agent.spawn()
+        # Sample
+        for t in range(time_steps):
+            choice=random.uniform(0, 1)
+            joint=random.randint(0, states)
+            s1=agent.get_state()
+            
+            if epsilon >= choice:
+                a=random.randint(0, 2)
+            else:
+                a=policy_1.forward(s1)[1]
+                
+            agent.move(a, random.sample(joints, 1)[0])
+            curr_env.step()
+            r=agent.get_dist()
+            replay.push(s1, a, r, agent.get_state())
+            
+        curr_env.clear()
+        
+        training_batch = replay.sample(batch_size)
+        sum=torch.zeros(size=(1, 3))
+        n=len(training_batch)//2
+        
+        for x in range(0, len(training_batch) , 2):
+            step1=training_batch[x]
+            step2=training_batch[x+1]
+            
+            guess=policy_1(step1[0])
+            target=target_1(step2[0])
+            
+            sum+=(target[0] - guess[0])**2
+            # Backward pass
+        mse=(sum/n).sum()
+        po.zero_grad() 
+        mse.backward()  
+        po.step()  
+        
+        if episode % 5 == 0:
+            
+            to.step()  
+        
+        #print(mse)
+        
 
 
 startPos = [0,0,0.25]
@@ -223,8 +274,8 @@ prototype_agent = Agent(model='bodyv7', start_pos=startPos, phys_id=gui_sim.get_
 joints=list(prototype_agent.get_joints().keys())
 states=len(joints)
 
-policy_1=NeuralNetwork(name='policy_1', num_actions=4, num_states=states)
-target_1=NeuralNetwork(name='target_1', num_actions=4, num_states=states)
+policy_1=NeuralNetwork(name='policy_1', num_actions=3, num_states=states)
+target_1=NeuralNetwork(name='target_1', num_actions=3, num_states=states)
 
 replay_memory = ReplayMemory(max=10000)
 
@@ -234,49 +285,31 @@ target_optim = torch.optim.SGD(target_1.parameters(), lr=0.01)
 epsilon= .75
 discount= 1
 update_steps= 4
-episodes=100
-batch_size=500
-view_interval=5
-time_steps=1000
+episodes=5
+batch_size=100
+view_interval=1000000
+time_steps=10
 
 actions=[-5, 0, 5]
 
-def dqn_train(vis_env=gui_sim, dir_env=direct_sim, agent=prototype_agent, pn=policy_1, tn=target_1, epsilon=epsilon, 
-                episodes=episodes, time_steps=time_steps, view_interval=view_interval, actions=actions, batch_size=batch_size):
+dqn_train(vis_env=gui_sim, dir_env=direct_sim, agent=prototype_agent, pn=policy_1, tn=target_1, epsilon=epsilon, 
+            episodes=episodes, time_steps=time_steps, view_interval=view_interval, actions=actions, batch_size=batch_size, replay=replay_memory,
+            po=pol_optim, to=target_optim)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+torch.save(policy_1.state_dict, "nn_models/pol_net.pth")
+torch.save(target_1.state_dict, "nn_models/target_net.pth")
+tick=0
 
 
 if __name__ == "__main__":
-    
-    while True:
-        tick+=1
-        prototype_agent.move(random.randint(-5, 5), random.sample(joints, 1)[0])
-        gui_sim.step()
+    print("done")
+    # while True:
+    #     tick+=1
+    #     prototype_agent.move(policy_1.forward(prototype_agent.get_state()), random.sample(joints, 1)[0])
+    #     gui_sim.step()
         
-        if tick % 1000 == 0:
-            print(f"Gui: {gui_sim.status()}\nDirect: {direct_sim.status()}")
+    #     if tick % 1000 == 0:
+    #         print(f"Gui: {gui_sim.status()}\nDirect: {direct_sim.status()}")
 
 
 

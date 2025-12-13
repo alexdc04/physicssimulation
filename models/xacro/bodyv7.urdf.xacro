@@ -5,7 +5,6 @@
 <xacro:property name="torso_weight" value="${total_weight * 0.6}" />
 <xacro:property name="leg_weight" value="${total_weight * .15}" />
 <xacro:property name="arm_weight" value="${total_weight * .05}" />
-<xacro:property name="pi" value="3.14"/>
 <xacro:property name="Cyan" value="0 1.0 1.0 1.0"/>
 <xacro:property name="Lilac" value=".8 .6 1.0 1.0"/>
 
@@ -86,12 +85,12 @@
 
 <!-- Arm Links-->
 <xacro:cuboid name="right_delt" mass="${arm_weight * .4}" x_len=".03" y_len=".03" z_len=".03" origin="0 0 0" rpy="0 0 0"/>
-<xacro:cuboid name="right_upper_arm" mass="${arm_weight * .29}" x_len=".022" y_len=".022" z_len=".065" origin=".005 0 -.025" rpy="0 -${pi/15} 0"/>
-<xacro:cuboid name="right_lower_arm" mass="${arm_weight * .29}" x_len=".022" y_len=".022" z_len=".065" origin=".005 0 -.025" rpy="0 -${pi/10} 0"/>
+<xacro:cuboid name="right_upper_arm" mass="${arm_weight * .29}" x_len=".022" y_len=".022" z_len=".065" origin=".005 0 -.025" rpy="0 -${3.14/15} 0"/>
+<xacro:cuboid name="right_lower_arm" mass="${arm_weight * .29}" x_len=".022" y_len=".022" z_len=".065" origin=".005 0 -.025" rpy="0 -${3.14/10} 0"/>
 
 <xacro:cuboid name="left_delt" mass="${arm_weight * .4}" x_len=".03" y_len=".03" z_len=".03" origin="0 0 0" rpy="0 0 0"/>
-<xacro:cuboid name="left_upper_arm" mass="${arm_weight * .29}" x_len=".022" y_len=".022" z_len=".065" origin=".005 0 -.025" rpy="0 -${pi/15} 0"/>
-<xacro:cuboid name="left_lower_arm" mass="${arm_weight * .29}" x_len=".022" y_len=".022" z_len=".065" origin=".005 0 -.025" rpy="0 -${pi/10} 0"/>
+<xacro:cuboid name="left_upper_arm" mass="${arm_weight * .29}" x_len=".022" y_len=".022" z_len=".065" origin=".005 0 -.025" rpy="0 -${3.14/15} 0"/>
+<xacro:cuboid name="left_lower_arm" mass="${arm_weight * .29}" x_len=".022" y_len=".022" z_len=".065" origin=".005 0 -.025" rpy="0 -${3.14/10} 0"/>
 
 <!-- Arm joints-->
 <xacro:revolve name="right_shoulder_x" parent="upper_torso" child="right_delt" hi="1.5" lo="0" axis="1 0 0" offset="0 .035 .05"/>
@@ -105,12 +104,12 @@
 
 
 <!-- Leg Links-->
-<xacro:cuboid name="right_thigh" mass="${arm_weight * .5}" x_len=".022" y_len=".022" z_len=".1" origin=".01 0 -.05" rpy="0 -${pi/15} 0"/>
-<xacro:cuboid name="left_thigh" mass="${arm_weight * .5}" x_len=".022" y_len=".022" z_len=".1" origin=".01 0 -.05" rpy="0 -${pi/15} 0"/>
+<xacro:cuboid name="right_thigh" mass="${arm_weight * .5}" x_len=".022" y_len=".022" z_len=".1" origin=".01 0 -.05" rpy="0 -${3.14/15} 0"/>
+<xacro:cuboid name="left_thigh" mass="${arm_weight * .5}" x_len=".022" y_len=".022" z_len=".1" origin=".01 0 -.05" rpy="0 -${3.14/15} 0"/>
 
 
-<xacro:cuboid name="left_calf" mass="${arm_weight * .5}" x_len=".022" y_len=".022" z_len=".1" origin="-.005 0 -.05" rpy="0 ${pi/20} 0"/>
-<xacro:cuboid name="right_calf" mass="${arm_weight * .5}" x_len=".022" y_len=".022" z_len=".1" origin="-.005 0 -.05" rpy="0 ${pi/20} 0"/>
+<xacro:cuboid name="left_calf" mass="${arm_weight * .5}" x_len=".022" y_len=".022" z_len=".1" origin="-.005 0 -.05" rpy="0 ${3.14/20} 0"/>
+<xacro:cuboid name="right_calf" mass="${arm_weight * .5}" x_len=".022" y_len=".022" z_len=".1" origin="-.005 0 -.05" rpy="0 ${3.14/20} 0"/>
 
 <xacro:cuboid name="right_foot" mass="${arm_weight * .05}" x_len=".045" y_len=".022" z_len=".01" origin=".015 0 0" rpy="0 0 0"/>
 <xacro:cuboid name="left_foot" mass="${arm_weight * .05}" x_len=".045" y_len=".022" z_len=".01" origin=".015 0 0" rpy="0 0 0"/>
