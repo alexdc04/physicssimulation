@@ -5,8 +5,28 @@
 <xacro:property name="torso_weight" value="${total_weight * 0.6}" />
 <xacro:property name="leg_weight" value="${total_weight * .15}" />
 <xacro:property name="arm_weight" value="${total_weight * .05}" />
-<xacro:property name="Cyan" value="0 1.0 1.0 1.0"/>
-<xacro:property name="Lilac" value=".8 .6 1.0 1.0"/>
+<!-- Basic Color Macros -->
+<xacro:macro name="material_color" params="name color">
+    <material name="${name}">
+        <color rgba="${color}"/>
+    </material>
+</xacro:macro>
+
+<!-- Predefined Common Colors -->
+<xacro:property name="red" value="1.0 0.0 0.0 1.0"/>
+<xacro:property name="green" value="0.0 1.0 0.0 1.0"/>
+<xacro:property name="blue" value="0.0 0.0 1.0 1.0"/>
+<xacro:property name="yellow" value="1.0 1.0 0.0 1.0"/>
+<xacro:property name="cyan" value="0.0 1.0 1.0 1.0"/>
+<xacro:property name="magenta" value="1.0 0.0 1.0 1.0"/>
+<xacro:property name="white" value="1.0 1.0 1.0 1.0"/>
+<xacro:property name="black" value="0.0 0.0 0.0 1.0"/>
+<xacro:property name="gray" value="0.5 0.5 0.5 1.0"/>
+<xacro:property name="orange" value="1.0 0.5 0.0 1.0"/>
+<xacro:property name="purple" value="0.5 0.0 0.5 1.0"/>
+
+
+
 
 <xacro:macro name="solid_sphere_inertia_tensors" params="mass radius" >
     <inertial>
@@ -41,13 +61,14 @@
     </inertial>
 </xacro:macro>
 
-<xacro:macro name="cuboid" params="name mass x_len y_len z_len origin rpy">
+<xacro:macro name="cuboid" params="name mass x_len y_len z_len origin rpy color">
     <link name="${name}">
         <visual>
             <geometry>
                 <box size="${x_len} ${y_len} ${z_len}"/>
             </geometry>
             <origin xyz="${origin}" rpy="${rpy}"/>
+            <xacro:material_color name="${color}" color="${color}"/>
         </visual>
         <collision>
             <geometry>
@@ -70,24 +91,28 @@
 </xacro:macro>
 
 
-<xacro:cuboid name="base_link" mass="${torso_weight * .12}" x_len=".03" y_len=".05" z_len=".025" origin="0 0 0" rpy="0 0 0"/>
+
 
 <!-- Torso Links-->
-
+<xacro:cuboid name="base_link" mass="${torso_weight * .12}" x_len=".015" y_len=".035" z_len=".05" origin="0 0 0" rpy="0 0 0" color="${red}"/>
+<xacro:cuboid name="head" mass="${torso_weight * .12}" x_len=".015" y_len=".03" z_len=".03" origin="0 0 .015" rpy="0 0 0" color="${orange}"/>
 <!-- Torso joints-->
+<xacro:revolve name="gaze" parent="base_link" child="head" hi=".8" lo="-.8" axis="0 0 1" offset="0 0 .025"/>
 
 <!-- Arm Links-->
-
+<xacro:cuboid name="left_arm" mass="${leg_weight * .5}" x_len=".015" y_len=".0165" z_len=".05" origin="0 .009 -.025" rpy="0 0 0" color="${green}"/>
+<xacro:cuboid name="right_arm" mass="${leg_weight * .5}" x_len=".015" y_len=".0165" z_len=".05" origin="0 -.009 -.025" rpy="0 0 0" color="${green}"/>
 <!-- Arm joints-->
-
+<xacro:revolve name="left_shoulder" parent="base_link" child="left_arm" hi=".8" lo="-.8" axis="0 1 0" offset="0 0.0175 .022"/>
+<xacro:revolve name="right_shoulder" parent="base_link" child="right_arm" hi=".8" lo="-.8" axis="0 1 0" offset="0 -0.0175 .022"/>
 
 <!-- Leg Links-->
-
-
+<xacro:cuboid name="left_leg" mass="${leg_weight * .5}" x_len=".015" y_len=".0165" z_len=".05" origin="0 0 -.025" rpy="0 0 0" color="${blue}"/>
+<xacro:cuboid name="right_leg" mass="${leg_weight * .5}" x_len=".015" y_len=".0165" z_len=".05" origin="0 0 -.025" rpy="0 0 0" color="${blue}"/>
 
 <!-- Leg joints-->
-
-
+<xacro:revolve name="left_hip" parent="base_link" child="left_leg" hi=".8" lo="-.8" axis="0 1 0" offset="0 0.008 -.025"/>
+<xacro:revolve name="right_hip" parent="base_link" child="right_leg" hi=".8" lo="-.8" axis="0 1 0" offset="0 -0.008 -.025"/>
 
 
 

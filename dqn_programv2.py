@@ -24,9 +24,9 @@ class Agent():
         self.model=model
         self.start_pos=start_pos
         self.p=phys_id
-        self.curr_x=0 
-        self.last_x=0 
-        self.traveled=0
+        self.x=0 
+        self.y=0
+        self.z=0
         self.agent_id=self.p.loadURDF((read_xacro(model)), basePosition=self.start_pos)
         self.joints_dict={}
         self.generate_joint_info()
@@ -49,19 +49,16 @@ class Agent():
         return self.agent_id
     
     def get_state(self) -> torch.Tensor:
-        self.state_tensor=(torch.tensor(list(map(lambda x: (x[0], x[1]), self.p.getJointStates(self.agent_id, jointIndices=list(self.joints_dict.keys()))))).flatten())
+        self.state_tensor = torch.tensor(list(map(lambda x: x[0], self.p.getJointStates(self.agent_id, jointIndices=list(self.joints_dict.keys())))))
         return self.state_tensor
     
     def get_curr_pos(self) -> tuple:
         self.update_pos()
+        return self.x, self.y, self.z
     
     def update_pos(self):
-        self.last_x=self.curr_x
-        self.curr_x=self.p.getLinkState(self.agent_id, 0)[0][0]
-        self.traveled=self.last_x-self.curr_x
-        
-    def get_traveled(self):
-        return self.traveled
+        pos=self.p.getLinkState(self.agent_id, 0)[0]
+        self.x, self.y, self.z =(pos[0]-self.x), (pos[1]-self.y), (pos[2]-self.z)
     
     def get_dist(self) -> float:
         xyz=self.p.getLinkState(self.agent_id, 0)[0]
@@ -77,9 +74,6 @@ class Agent():
     def reset(self):
         self.p.resetBasePositionAndOrientation(self.agent_id, posObj=startPos, ornObj=ornPos)
         
-    def get_actions(self):
-        return self.actions
-    
     def move(self, choice):
         a=self.actions[choice]
         self.p.setJointMotorControl2(bodyUniqueId = self.agent_id, 
@@ -231,11 +225,9 @@ def dqn_train(vis_env: Environment, dir_env: Environment, agent: Agent, pn: Neur
     '''
     rewards=[]
     last_a=5
-    decs=len(agent.get_actions())-1
-    
     for episode in range(episodes):
-        if episode % 10 == 0:
-            epsilon -=.05
+        if episode % 100 == 0:
+            epsilon -=.1
         mse=0
         curr_env=vis_env if episode % view_interval == 0 else dir_env
         curr_env.clear()
@@ -248,7 +240,7 @@ def dqn_train(vis_env: Environment, dir_env: Environment, agent: Agent, pn: Neur
             s1=agent.get_state()
             
             if epsilon >= choice:
-                a=random.randint(0, decs)
+                a=random.randint(0, 44)
             else:
                 a=policy_1.forward(s1)[1]
                 
@@ -256,7 +248,13 @@ def dqn_train(vis_env: Environment, dir_env: Environment, agent: Agent, pn: Neur
             curr_env.step()
             moved=agent.get_curr_pos()
             #r=reward(abs_dist=agent.get_dist(), x=moved[0], y=moved[1], z=moved[2], f=curr_env.check_touching_ground(agent.get_id()))
-            r=(3*agent.get_dist())+(1.5*agent.get_traveled())
+            r=agent.get_dist()
+            
+            if a != last_a:
+                r+=1
+            else:
+                r-=.5
+                
             rewards.append(r)
             last_a=a
             replay.push(s1, a, r, agent.get_state())
@@ -305,16 +303,16 @@ startOrientation = p.getQuaternionFromEuler([0,0,0])
 # Initial Params
 current_environment ="plane"
 time_interval = .1 #seconds
-min_force, max_force = 1, 200
+min_force, max_force = 1, 20
 actions={"forward": 1.2, "reset": 0, 'backward': -1.2}
-vals=[-15, -7, 7, 15]
+vals=[-5, -2, 2, 5]
 p_net_weights='nn_models/policy_1.pth'
 t_net_weights='nn_models/target_1.pth'
 
 gui_sim=Environment(map=current_environment, render=True)
 direct_sim=Environment(map=current_environment, render=False)
 
-prototype_agent = Agent(model='simple_dude', start_pos=startPos, phys_id=gui_sim.get_p(), vals=vals)
+prototype_agent = Agent(model='bodyv7', start_pos=startPos, phys_id=gui_sim.get_p(), vals=vals)
 
 joints=list(prototype_agent.get_joints().keys())
 states=len(joints)
@@ -322,8 +320,8 @@ states=len(joints)
 act=define_actions(joints=joints, vals=vals)
 index=0
 print(act[18])
-policy_1=NeuralNetwork(name='policy_1', num_actions=len(act), num_states=states*2)
-target_1=NeuralNetwork(name='target_1', num_actions=len(act), num_states=states*2)
+policy_1=NeuralNetwork(name='policy_1', num_actions=len(act), num_states=states)
+target_1=NeuralNetwork(name='target_1', num_actions=len(act), num_states=states)
 
 if p_net_weights:
     policy_1.load_state_dict(torch.load(p_net_weights))
@@ -336,21 +334,28 @@ replay_memory = ReplayMemory(max=10000)
 pol_optim = torch.optim.SGD(policy_1.parameters(), lr=0.01)
 target_optim = torch.optim.SGD(target_1.parameters(), lr=0.01)
 
-epsilon= .5
-discount= .15
+epsilon= 1
+discount= .3
 update_steps= 10
-episodes=100
+episodes=1000
 batch_size=1000
-view_interval=100
+view_interval=100000
 time_steps=3000
 
-dqn_train(vis_env=gui_sim, dir_env=direct_sim, agent=prototype_agent, pn=policy_1, tn=target_1, epsilon=epsilon, 
-            episodes=episodes, time_steps=time_steps, view_interval=view_interval, actions=actions, batch_size=batch_size, replay=replay_memory,
-            po=pol_optim, to=target_optim)
+actions=[-5, -2, 2, 5]
+
+# dqn_train(vis_env=gui_sim, dir_env=direct_sim, agent=prototype_agent, pn=policy_1, tn=target_1, epsilon=epsilon, 
+#             episodes=episodes, time_steps=time_steps, view_interval=view_interval, actions=actions, batch_size=batch_size, replay=replay_memory,
+#             po=pol_optim, to=target_optim)
 
 policy_1.save(dir='nn_models')
 target_1.save(dir='nn_models')
 
+
+
+
+policy_1.save(dir='nn_models')
+target_1.save(dir='nn_models')
 gui_sim.clear()
 direct_sim.clear()
 
@@ -363,14 +368,12 @@ print(prototype_agent.get_joints())
 if __name__ == "__main__":
     print("done")
     while True:
-        
         tick+=1
         a=policy_1.forward(prototype_agent.get_state())[1]
-        prototype_agent.get_curr_pos()
-        print(prototype_agent.get_state())
-        
+        print(a)
         prototype_agent.move(a)
         gui_sim.step()
+        
         
         
         if tick % 3000 == 0:
