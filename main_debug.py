@@ -87,11 +87,11 @@ class NeuralNetwork(nn.Module):
         super().__init__()
         self.name=name
         self.linear_relu_stack=nn.Sequential(
-            nn.Linear(num_states, 64),
+            nn.Linear(num_states, 128),
             nn.ReLU(),
-            nn.Linear(64, 64),
+            nn.Linear(128, 128),
             nn.ReLU(),
-            nn.Linear(64, num_actions),
+            nn.Linear(128, num_actions),
         )
 
     def forward(self, x):
@@ -193,11 +193,15 @@ class Environment():
         if self.render: time.sleep(1./240.)
         
     def check_touching_ground(self, agent_id):
+        out=0
+        for x in range(15):
+            if x == 14 or x == 11:
+                pass
+            else:
+                if self.p.getContactPoints(bodyA=self.map_id, bodyB=agent_id, linkIndexA=-1, linkIndexB=x):
+                    out=1
         
-        if self.p.getContactPoints(bodyA=self.map_id, bodyB=agent_id, linkIndexA=-1, linkIndexB=-1) or self.p.getContactPoints(bodyA=self.map_id, bodyB=agent_id, linkIndexA=-1, linkIndexB=0) or self.p.getContactPoints(bodyA=self.map_id, bodyB=agent_id, linkIndexA=-1, linkIndexB=1):
-            return 1 
-        else: 
-            return 0
+        return out
 
 def dqn_train(vis_env: Environment, dir_env: Environment, agent: Agent, pn: NeuralNetwork, tn: NeuralNetwork, epsilon: float, 
                 episodes: int, time_steps: int, view_interval: int, actions: list, batch_size: int, replay: ReplayMemory, po: optim, to: optim):
@@ -230,7 +234,6 @@ def dqn_train(vis_env: Environment, dir_env: Environment, agent: Agent, pn: Neur
         # Sample
         for t in range(time_steps):
             choice=random.uniform(0, 1)
-            joint=random.randint(0, states)
             s1=agent.get_state()
             
             if epsilon >= choice:
@@ -252,8 +255,7 @@ def dqn_train(vis_env: Environment, dir_env: Environment, agent: Agent, pn: Neur
         for x in range(0, len(training_batch) , 2):
             step1=training_batch[x]
             step2=training_batch[x+1]
-            print(step1, step2)
-            guess=(pn(step1[0])[0])[step1[1]]
+            guess=pn(step1[0])[0][step1[1]]
             target=(tn(step2[0])[0]).max()
             
             sum+=((step2[2]+(discount*target)) - guess)**2
@@ -271,7 +273,7 @@ def dqn_train(vis_env: Environment, dir_env: Environment, agent: Agent, pn: Neur
         
 def reward(abs_dist: float, x: float, y: float, z: float, f: int):
     if x < 0: x*=2 
-    return ((2*abs_dist) + x + (.3*y) + (.3*z) - (10*f))
+    return ((2*abs_dist) + x + (.3*y) + (.3*z) - (1*f))
 
 def define_actions(joints: list, vals: list):
     act=[]
@@ -280,15 +282,15 @@ def define_actions(joints: list, vals: list):
         for j in joints:
             act.append((v,j))
     return act
-startPos = [0,0,0.25]
-ornPos = [0,0, 0.25, 0]
+startPos = [0,0,0.18]
+ornPos = [0,0, 0.18, 0]
 startOrientation = p.getQuaternionFromEuler([0,0,0])  
 # Initial Params
 current_environment ="plane"
 time_interval = .1 #seconds
 min_force, max_force = 1, 20
 actions={"forward": 1.2, "reset": 0, 'backward': -1.2}
-vals=[-5, 0, 5]
+vals=[-5, -2, 2, 5]
 # p_net_weights='nn_models/policy_1.pth'
 # t_net_weights='nn_models/target_1.pth'
 
@@ -302,16 +304,15 @@ states=len(joints)
 
 act=define_actions(joints=joints, vals=vals)
 index=0
-
-policy_1=NeuralNetwork(name='policy_1', num_actions=44, num_states=states)
-target_1=NeuralNetwork(name='target_1', num_actions=44, num_states=states)
+print(act)
+policy_1=NeuralNetwork(name='policy_1', num_actions=len(act), num_states=states)
+target_1=NeuralNetwork(name='target_1', num_actions=len(act), num_states=states)
 
 # if p_net_weights:
 #     policy_1.load_state_dict(torch.load(p_net_weights))
 
 # if t_net_weights:
 #     target_1.load_state_dict(torch.load(t_net_weights))
-
 
 replay_memory = ReplayMemory(max=10000)
 
@@ -321,12 +322,13 @@ target_optim = torch.optim.SGD(target_1.parameters(), lr=0.01)
 epsilon= .75
 discount= 1
 update_steps= 4
-episodes=100
+episodes=10
 batch_size=50
-view_interval=250
-time_steps=100
+view_interval=100
+time_steps=1000
 
-actions=[-5, 0, 5]
+actions=[-5, -2, 2, 0, 5]
+
 dqn_train(vis_env=gui_sim, dir_env=direct_sim, agent=prototype_agent, pn=policy_1, tn=target_1, epsilon=epsilon, 
             episodes=episodes, time_steps=time_steps, view_interval=view_interval, actions=actions, batch_size=batch_size, replay=replay_memory,
             po=pol_optim, to=target_optim)
@@ -339,7 +341,7 @@ direct_sim.clear()
 prototype_agent.set_p(gui_sim.get_p())
 prototype_agent.spawn()
 tick=0
-
+print(prototype_agent.get_joints())
 
 
 if __name__ == "__main__":
@@ -347,10 +349,8 @@ if __name__ == "__main__":
     while True:
         tick+=1
         a=policy_1.forward(prototype_agent.get_state())[1]
-        joint=random.sample(joints, 1)[0]
-        prototype_agent.move(a, joint)
+        prototype_agent.move(a)
         gui_sim.step()
-        print(act)
         if tick % 1000 == 0:
             print(prototype_agent.get_dist())
             gui_sim.clear()
