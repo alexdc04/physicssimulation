@@ -20,19 +20,15 @@ from data_processing import read_xacro, save_data, load_data, AgentNotFound
 from pybullet_utils import bullet_client as bc
 
 class Agent():
-    def __init__(self, model:str, start_pos: list, phys_id, vals: list):
+    def __init__(self, model:str, start_pos: list, phys_id):
         self.model=model
         self.start_pos=start_pos
         self.p=phys_id
-        self.x=0 
-        self.y=0
-        self.z=0
         self.agent_id=self.p.loadURDF((read_xacro(model)), basePosition=self.start_pos)
         self.joints_dict={}
         self.generate_joint_info()
         self.state_tensor=None
         self.get_state()
-        self.actions=define_actions(list(self.joints_dict.keys()), vals)
         
     def generate_joint_info(self):
         if not self.joints_dict:
@@ -52,13 +48,8 @@ class Agent():
         self.state_tensor = torch.tensor(list(map(lambda x: x[0], self.p.getJointStates(self.agent_id, jointIndices=list(self.joints_dict.keys())))))
         return self.state_tensor
     
-    def get_curr_pos(self) -> tuple:
-        self.update_pos()
-        return self.x, self.y, self.z
-    
-    def update_pos(self):
-        pos=self.p.getLinkState(self.agent_id, 0)[0]
-        self.x, self.y, self.z =(pos[0]-self.x), (pos[1]-self.y), (pos[2]-self.z)
+    def check_pos(self) -> tuple:
+        return self.p.getBasePositionAndOrientation(self.agent_id)
     
     def get_dist(self) -> float:
         xyz=self.p.getLinkState(self.agent_id, 0)[0]
@@ -74,12 +65,12 @@ class Agent():
     def reset(self):
         self.p.resetBasePositionAndOrientation(self.agent_id, posObj=startPos, ornObj=ornPos)
         
-    def move(self, choice):
-        a=self.actions[choice]
+    def move(self, choice, joint):
+        actions=[-5, 1, 5]
         self.p.setJointMotorControl2(bodyUniqueId = self.agent_id, 
-                                jointIndex=a[1], 
+                                jointIndex=joint, 
                                 controlMode=self.p.VELOCITY_CONTROL, 
-                                targetVelocity=a[0], 
+                                targetVelocity=actions[choice], 
                                 force=max_force)
 
 class NeuralNetwork(nn.Module):
@@ -193,11 +184,7 @@ class Environment():
         if self.render: time.sleep(1./240.)
         
     def check_touching_ground(self, agent_id):
-        
-        if self.p.getContactPoints(bodyA=self.map_id, bodyB=agent_id, linkIndexA=-1, linkIndexB=-1) or self.p.getContactPoints(bodyA=self.map_id, bodyB=agent_id, linkIndexA=-1, linkIndexB=0) or self.p.getContactPoints(bodyA=self.map_id, bodyB=agent_id, linkIndexA=-1, linkIndexB=1):
-            return 1 
-        else: 
-            return 0
+        if self.p.getContactPoints(bodyA=self.map_id, bodyB=agent_id, linkIndexA=-1, linkIndexB=-1): return True 
 
 def dqn_train(vis_env: Environment, dir_env: Environment, agent: Agent, pn: NeuralNetwork, tn: NeuralNetwork, epsilon: float, 
                 episodes: int, time_steps: int, view_interval: int, actions: list, batch_size: int, replay: ReplayMemory, po: optim, to: optim):
@@ -234,13 +221,15 @@ def dqn_train(vis_env: Environment, dir_env: Environment, agent: Agent, pn: Neur
             s1=agent.get_state()
             
             if epsilon >= choice:
-                a=random.randint(0, 44)
+                a=random.randint(0, 2)
             else:
                 a=policy_1.forward(s1)[1]
-            agent.move(a)
+            agent.move(a, random.sample(joints, 1)[0])
             curr_env.step()
-            moved=agent.get_curr_pos()
-            r=reward(abs_dist=agent.get_dist(), x=moved[0], y=moved[1], z=moved[2], f=curr_env.check_touching_ground(agent.get_id()))
+            if curr_env.check_touching_ground(agent.get_id()):
+                r=-10
+            else:
+                r=4
             replay.push(s1, a, r, agent.get_state())
             
         curr_env.clear()
@@ -252,7 +241,7 @@ def dqn_train(vis_env: Environment, dir_env: Environment, agent: Agent, pn: Neur
         for x in range(0, len(training_batch) , 2):
             step1=training_batch[x]
             step2=training_batch[x+1]
-            print(step1, step2)
+            
             guess=(pn(step1[0])[0])[step1[1]]
             target=(tn(step2[0])[0]).max()
             
@@ -269,17 +258,8 @@ def dqn_train(vis_env: Environment, dir_env: Environment, agent: Agent, pn: Neur
         
         print(episode, mse)
         
-def reward(abs_dist: float, x: float, y: float, z: float, f: int):
-    if x < 0: x*=2 
-    return ((2*abs_dist) + x + (.3*y) + (.3*z) - (10*f))
 
-def define_actions(joints: list, vals: list):
-    act=[]
-    index=0
-    for v in vals:
-        for j in joints:
-            act.append((v,j))
-    return act
+
 startPos = [0,0,0.25]
 ornPos = [0,0, 0.25, 0]
 startOrientation = p.getQuaternionFromEuler([0,0,0])  
@@ -288,51 +268,46 @@ current_environment ="plane"
 time_interval = .1 #seconds
 min_force, max_force = 1, 20
 actions={"forward": 1.2, "reset": 0, 'backward': -1.2}
-vals=[-5, 0, 5]
-# p_net_weights='nn_models/policy_1.pth'
-# t_net_weights='nn_models/target_1.pth'
+p_net_weights='nn_models/policy_1.pth'
+t_net_weights='nn_models/target_1.pth'
 
 gui_sim=Environment(map=current_environment, render=True)
 direct_sim=Environment(map=current_environment, render=False)
 
-prototype_agent = Agent(model='bodyv7', start_pos=startPos, phys_id=gui_sim.get_p(), vals=vals)
+prototype_agent = Agent(model='bodyv7', start_pos=startPos, phys_id=gui_sim.get_p())
 
 joints=list(prototype_agent.get_joints().keys())
 states=len(joints)
 
-act=define_actions(joints=joints, vals=vals)
-index=0
+policy_1=NeuralNetwork(name='policy_1', num_actions=3, num_states=states)
+target_1=NeuralNetwork(name='target_1', num_actions=3, num_states=states)
 
-policy_1=NeuralNetwork(name='policy_1', num_actions=44, num_states=states)
-target_1=NeuralNetwork(name='target_1', num_actions=44, num_states=states)
+if p_net_weights:
+    policy_1.load_state_dict(torch.load(p_net_weights))
 
-# if p_net_weights:
-#     policy_1.load_state_dict(torch.load(p_net_weights))
-
-# if t_net_weights:
-#     target_1.load_state_dict(torch.load(t_net_weights))
-
+if t_net_weights:
+    target_1.load_state_dict(torch.load(t_net_weights))
 
 replay_memory = ReplayMemory(max=10000)
 
 pol_optim = torch.optim.SGD(policy_1.parameters(), lr=0.01)
 target_optim = torch.optim.SGD(target_1.parameters(), lr=0.01)
 
-epsilon= .75
+epsilon= .45
 discount= 1
 update_steps= 4
 episodes=100
-batch_size=50
+batch_size=500
 view_interval=250
-time_steps=100
+time_steps=1000
 
 actions=[-5, 0, 5]
 dqn_train(vis_env=gui_sim, dir_env=direct_sim, agent=prototype_agent, pn=policy_1, tn=target_1, epsilon=epsilon, 
             episodes=episodes, time_steps=time_steps, view_interval=view_interval, actions=actions, batch_size=batch_size, replay=replay_memory,
             po=pol_optim, to=target_optim)
 
-policy_1.save(dir='nn_models')
-target_1.save(dir='nn_models')
+# policy_1.save(dir='nn_models')
+# target_1.save(dir='nn_models')
 gui_sim.clear()
 direct_sim.clear()
 
@@ -348,9 +323,12 @@ if __name__ == "__main__":
         tick+=1
         a=policy_1.forward(prototype_agent.get_state())[1]
         joint=random.sample(joints, 1)[0]
+        print(a, joint)
+        if gui_sim.check_touching_ground(prototype_agent.get_id()):
+            print(gui_sim.check_touching_ground(prototype_agent.get_id()))
         prototype_agent.move(a, joint)
         gui_sim.step()
-        print(act)
+        
         if tick % 1000 == 0:
             print(prototype_agent.get_dist())
             gui_sim.clear()
