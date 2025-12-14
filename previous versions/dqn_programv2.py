@@ -16,7 +16,7 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 from pathlib import Path
-from data_processing import read_xacro, save_data, load_data, AgentNotFound
+from modules.data_processing import read_xacro, save_data, load_data, AgentNotFound
 from pybullet_utils import bullet_client as bc
 
 class Agent():
