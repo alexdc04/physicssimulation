@@ -193,13 +193,13 @@ class Environment():
         if self.render: time.sleep(1./240.)
         
     def check_touching_ground(self, agent_id):
-        out=0
+        out=1
         for x in range(15):
             if x == 14 or x == 11:
                 pass
             else:
                 if self.p.getContactPoints(bodyA=self.map_id, bodyB=agent_id, linkIndexA=-1, linkIndexB=x):
-                    out=1
+                    out=-1
         
         return out
 
@@ -223,9 +223,12 @@ def dqn_train(vis_env: Environment, dir_env: Environment, agent: Agent, pn: Neur
         actions(list): List of actions possible.
         batch_size(int): How many samples to train on.
     '''
-    mse=0
+    rewards=[]
+    last_a=5
     for episode in range(episodes):
-        
+        if episode % 100 == 0:
+            epsilon -=.1
+        mse=0
         curr_env=vis_env if episode % view_interval == 0 else dir_env
         curr_env.clear()
         
@@ -240,10 +243,20 @@ def dqn_train(vis_env: Environment, dir_env: Environment, agent: Agent, pn: Neur
                 a=random.randint(0, 44)
             else:
                 a=policy_1.forward(s1)[1]
+                
             agent.move(a)
             curr_env.step()
             moved=agent.get_curr_pos()
-            r=reward(abs_dist=agent.get_dist(), x=moved[0], y=moved[1], z=moved[2], f=curr_env.check_touching_ground(agent.get_id()))
+            #r=reward(abs_dist=agent.get_dist(), x=moved[0], y=moved[1], z=moved[2], f=curr_env.check_touching_ground(agent.get_id()))
+            r=agent.get_dist()
+            
+            if a != last_a:
+                r+=1
+            else:
+                r-=.5
+                
+            rewards.append(r)
+            last_a=a
             replay.push(s1, a, r, agent.get_state())
             
         curr_env.clear()
@@ -265,15 +278,17 @@ def dqn_train(vis_env: Environment, dir_env: Environment, agent: Agent, pn: Neur
         mse.backward()  
         po.step()  
         
-        if episode % 5 == 0:
+        if episode % 10 == 0:
             
-            to.step()  
+            tn.load_state_dict(pn.state_dict())
         
         print(episode, mse)
+    plt.plot(np.array(rewards))
+    plt.show()
         
-def reward(abs_dist: float, x: float, y: float, z: float, f: int):
-    if x < 0: x*=2 
-    return ((2*abs_dist) + x + (.3*y) + (.3*z) - (1*f))
+def reward(abs_dist: float):
+    
+    return ("temp")
 
 def define_actions(joints: list, vals: list):
     act=[]
@@ -291,8 +306,8 @@ time_interval = .1 #seconds
 min_force, max_force = 1, 20
 actions={"forward": 1.2, "reset": 0, 'backward': -1.2}
 vals=[-5, -2, 2, 5]
-# p_net_weights='nn_models/policy_1.pth'
-# t_net_weights='nn_models/target_1.pth'
+p_net_weights='nn_models/policy_1.pth'
+t_net_weights='nn_models/target_1.pth'
 
 gui_sim=Environment(map=current_environment, render=True)
 direct_sim=Environment(map=current_environment, render=False)
@@ -304,34 +319,40 @@ states=len(joints)
 
 act=define_actions(joints=joints, vals=vals)
 index=0
-print(act)
+print(act[18])
 policy_1=NeuralNetwork(name='policy_1', num_actions=len(act), num_states=states)
 target_1=NeuralNetwork(name='target_1', num_actions=len(act), num_states=states)
 
-# if p_net_weights:
-#     policy_1.load_state_dict(torch.load(p_net_weights))
+if p_net_weights:
+    policy_1.load_state_dict(torch.load(p_net_weights))
 
-# if t_net_weights:
-#     target_1.load_state_dict(torch.load(t_net_weights))
+if t_net_weights:
+    target_1.load_state_dict(torch.load(t_net_weights))
 
 replay_memory = ReplayMemory(max=10000)
 
 pol_optim = torch.optim.SGD(policy_1.parameters(), lr=0.01)
 target_optim = torch.optim.SGD(target_1.parameters(), lr=0.01)
 
-epsilon= .75
-discount= 1
-update_steps= 4
-episodes=10
-batch_size=50
-view_interval=100
-time_steps=1000
+epsilon= 1
+discount= .3
+update_steps= 10
+episodes=1000
+batch_size=1000
+view_interval=100000
+time_steps=3000
 
-actions=[-5, -2, 2, 0, 5]
+actions=[-5, -2, 2, 5]
 
 dqn_train(vis_env=gui_sim, dir_env=direct_sim, agent=prototype_agent, pn=policy_1, tn=target_1, epsilon=epsilon, 
             episodes=episodes, time_steps=time_steps, view_interval=view_interval, actions=actions, batch_size=batch_size, replay=replay_memory,
             po=pol_optim, to=target_optim)
+
+policy_1.save(dir='nn_models')
+target_1.save(dir='nn_models')
+
+
+
 
 policy_1.save(dir='nn_models')
 target_1.save(dir='nn_models')
@@ -346,12 +367,16 @@ print(prototype_agent.get_joints())
 
 if __name__ == "__main__":
     print("done")
-    while True:
-        tick+=1
-        a=policy_1.forward(prototype_agent.get_state())[1]
-        prototype_agent.move(a)
-        gui_sim.step()
-        if tick % 1000 == 0:
-            print(prototype_agent.get_dist())
-            gui_sim.clear()
-            prototype_agent.spawn() 
+    # while True:
+    #     tick+=1
+    #     a=policy_1.forward(prototype_agent.get_state())[1]
+    #     print(a)
+    #     prototype_agent.move(a)
+    #     gui_sim.step()
+        
+        
+        
+        # if tick % 1000 == 0:
+        #     print(prototype_agent.get_dist())
+        #     gui_sim.clear()
+        #     prototype_agent.spawn() 
