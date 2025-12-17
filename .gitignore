@@ -1,0 +1,5 @@
+# Google Drive API credentials
+cj_service_key.json
+client_secrets.json
+settings.yaml
+*.json
