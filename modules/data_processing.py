@@ -2,7 +2,6 @@ from pathlib import Path
 from xacrodoc import XacroDoc
 import pickle
 
-
 def read_xacro(file_name: str) -> str:
     current_file = file_name
 
