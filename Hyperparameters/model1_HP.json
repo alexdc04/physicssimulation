@@ -1,0 +1,9 @@
+{
+    "epsilon": 0.5,
+    "discount": 0.15,
+    "update_steps": 10,
+    "episodes": 100,
+    "batch_size": 1000,
+    "view_interval": 100,
+    "time_steps": 3000
+}

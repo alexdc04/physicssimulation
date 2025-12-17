@@ -1,0 +1,49 @@
+{
+    "txt": "text/plain",
+    "html": "text/html",
+    "css": "text/css",
+    "csv": "text/csv",
+    "md": "text/markdown",
+    "xml": "text/xml",
+    
+    "json": "application/json",
+    "xml_app": "application/xml",
+    "pdf": "application/pdf",
+    "zip": "application/zip",
+    "gzip": "application/gzip",
+    "bin": "application/octet-stream",
+    "js": "application/javascript",
+    "sql": "application/sql",
+    
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+    "png": "image/png",
+    "gif": "image/gif",
+    "webp": "image/webp",
+    "svg": "image/svg+xml",
+    "bmp": "image/bmp",
+    "tiff": "image/tiff",
+    
+    "mp3": "audio/mpeg",
+    "wav": "audio/wav",
+    "ogg_audio": "audio/ogg",
+    "flac": "audio/flac",
+    "aac": "audio/aac",
+    
+    "mp4": "video/mp4",
+    "mpeg": "video/mpeg",
+    "webm": "video/webm",
+    "ogg_video": "video/ogg",
+    "avi": "video/x-msvideo",
+    
+    "folder": "application/vnd.google-apps.folder",
+    "doc": "application/vnd.google-apps.document",
+    "sheet": "application/vnd.google-apps.spreadsheet",
+    "slide": "application/vnd.google-apps.presentation",
+    "form": "application/vnd.google-apps.form",
+    
+    "py": "application/x-python-code",
+    "yaml": "application/x-yaml",
+    "h5": "application/x-hdf5",
+    "parquet": "application/x-parquet"
+}

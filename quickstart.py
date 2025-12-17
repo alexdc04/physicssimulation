@@ -54,13 +54,17 @@ class DriveConnection():
         return out
     
     def save(self, data: object, name: str, dir='root'):
+        """ 
+        Saves data to drive. Default directory is root.
+        """
         old=time.time()
         print(f"Beginning Data Insertion.")
         file=self.drive.CreateFile({'title': name, "parents": [{"id": f"{dir}"}]})
         file.content = io.BytesIO(pickle.dumps(data))
         file.Upload()
         print(f"Finished Insertion. Time Elapsed: {time.time()-old} seconds.\n")
-        
+
+
 
 conn=DriveConnection()
 test=torch.tensor([0, 0, 0])
@@ -68,47 +72,3 @@ conn.save(data=test, name='Insert Test', dir='root')
 want = conn.get(dir='root', conditions=["title='image_test'"])
 print(want)
 
-
-
-
-
-
-
-
-# folder_id='1vzJCbtc3yE2_EsHBVIAvf3-vt89tpMm0'
-
-# print(read_json("mime_types.json", json))
-
-
-
-
-
-
-
-
-
-# file = drive.CreateFile({
-#     "title": "test_blob",          # File name
-#     "parents": [{"id": "1vzJCbtc3yE2_EsHBVIAvf3-vt89tpMm0"}], # Drive folder
-#     "description": "Test upload",     # Optional
-#     "starred": False
-# })
-
-# test=torch.tensor([0, 0, 0])
-
-
-# file=drive.CreateFile({'title': 'image_test'})
-# file.content = io.BytesIO(pickle.dumps(test))
-# file.Upload()
-
-
-
-# new=None
-# target=drive.CreateFile()
-# file_list = drive.ListFile({'q': "'1vzJCbtc3yE2_EsHBVIAvf3-vt89tpMm0' in parents and title='hyperparameters.json' and trashed=false"}).GetList()
-# for file1 in file_list:
-#     print('title: %s, id: %s' % (file1['title'], file1['id']))
-#     temp=drive.CreateFile({'id':file1['id']}).GetContentString()
-#     new=json.loads(temp)
-    
-# print(new, type(new))

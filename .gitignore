@@ -2,5 +2,4 @@
 cj_service_key.json
 client_secrets.json
 settings.yaml
-cj-key.p12
-*.json
+credentials.json
