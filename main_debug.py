@@ -16,7 +16,7 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 from pathlib import Path
-from modules.data_processing import read_xacro, save_data, load_data, AgentNotFound
+from modules.data_processing import read_xacro, DriveConnection, load_session_data, save_session_data
 from pybullet_utils import bullet_client as bc
 
 class Agent():
@@ -308,12 +308,12 @@ time_interval = .1 #seconds
 min_force, max_force = 1, 200
 actions={"forward": 1.2, "reset": 0, 'backward': -1.2}
 vals=[-15, -7, 7, 15]
-p_net_weights='nn_models/policy_1.pth'
-t_net_weights='nn_models/target_1.pth'
+# p_net_weights='nn_models/policy_1.pth'
+# t_net_weights='nn_models/target_1.pth'
 
 gui_sim=Environment(map=current_environment, render=True)
 direct_sim=Environment(map=current_environment, render=False)
-
+conn=DriveConnection()
 prototype_agent = Agent(model='simple_dude', start_pos=startPos, phys_id=gui_sim.get_p(), vals=vals)
 
 joints=list(prototype_agent.get_joints().keys())
@@ -321,36 +321,30 @@ states=len(joints)
 
 act=define_actions(joints=joints, vals=vals)
 index=0
-print(act[18])
+
 policy_1=NeuralNetwork(name='policy_1', num_actions=len(act), num_states=states*2)
 target_1=NeuralNetwork(name='target_1', num_actions=len(act), num_states=states*2)
-
-if p_net_weights:
-    policy_1.load_state_dict(torch.load(p_net_weights))
-
-if t_net_weights:
-    target_1.load_state_dict(torch.load(t_net_weights))
 
 replay_memory = ReplayMemory(max=10000)
 
 pol_optim = torch.optim.SGD(policy_1.parameters(), lr=0.01)
 target_optim = torch.optim.SGD(target_1.parameters(), lr=0.01)
 
-epsilon= .5
-discount= .15
-update_steps= 10
-episodes=100
-batch_size=1000
-view_interval=100
-time_steps=3000
+data=load_session_data(hp_name='model1_HP.json', model_name='model1', conn=conn)
 
-dqn_train(vis_env=gui_sim, dir_env=direct_sim, agent=prototype_agent, pn=policy_1, tn=target_1, epsilon=epsilon, 
-            episodes=episodes, time_steps=time_steps, view_interval=view_interval, actions=actions, batch_size=batch_size, replay=replay_memory,
-            po=pol_optim, to=target_optim)
+print(data)
+# dqn_train(vis_env=gui_sim, dir_env=direct_sim, agent=prototype_agent, pn=policy_1, tn=target_1, epsilon=epsilon, 
+#             episodes=episodes, time_steps=time_steps, view_interval=view_interval, actions=actions, batch_size=batch_size, replay=replay_memory,
+#             po=pol_optim, to=target_optim)
 
-policy_1.save(dir='nn_models')
-target_1.save(dir='nn_models')
+data={  
+        'model_name': 'first',
+        'replay_memory': replay_memory,
+        'policy_net_parameters': policy_1.state_dict,
+        'target_net_parameters': target_1.state_dict
+    }
 
+save_session_data(data=data, conn=conn)
 gui_sim.clear()
 direct_sim.clear()
 
@@ -361,8 +355,6 @@ print(prototype_agent.get_joints())
 
 
 if __name__ == "__main__":
-    print("done")
-    while True:
         
         tick+=1
         a=policy_1.forward(prototype_agent.get_state())[1]
