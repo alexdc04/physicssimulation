@@ -33,6 +33,9 @@ class DriveConnection():
         gauth.LocalWebserverAuth()
         return GoogleDrive(gauth)
 
+    def get_dir_id(self, dir: str):
+        return self.main_dirs.get(f'{dir}')
+    
     def query(self, dir='root', conditions=[]) -> dict:
         """
         Queries database. By default it will give everything in the root dir.\n
@@ -54,7 +57,7 @@ class DriveConnection():
         """
         Extension of query. If desired, files are converted from drive to correct format.\n
         """
-        location=self.main_dirs[dir]
+        location=self.get_dir_id(dir)
         values=self.query(location, conditions)
         old=time.time()
         print(f"Beginning conversion for {len(conditions)} files.")
@@ -70,8 +73,7 @@ class DriveConnection():
         """ 
         Saves data to drive. Default directory is root.
         """
-        location=self.main_dirs[dir]
-        
+        location=self.get_dir_id(dir)
         old=time.time()
         print(f"Beginning Data Insertion into {dir}")
         file=self.drive.CreateFile({'title': name, "parents": [{"id": f"{location}"}]})
@@ -79,6 +81,12 @@ class DriveConnection():
         file.Upload()
         print(f"Finished Insertion. Time Elapsed: {time.time()-old} seconds.\n")
         
+    def exists(self, name, dir: str):
+        location=self.get_dir_id(dir)
+        if self.query(dir=f'{location}', conditions=[f"title='{name}_rm'"]):
+            return True
+        else:
+            return False
     
 
 def load_session_data(hp_name: str, model_name: str, conn: DriveConnection):
@@ -97,3 +105,6 @@ def save_session_data(data: dict, conn: DriveConnection):
     conn.save(data.get('policy_net_parameters'), name+'_pn_weights', dir='DQN_Parameters')
     conn.save(data.get('target_net_parameters'), name+'_tn_weights', dir='DQN_Parameters')
 
+test=DriveConnection()
+
+print(test.exists('firs', 'Replay_Memory'))
