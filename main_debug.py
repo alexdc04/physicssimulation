@@ -233,39 +233,41 @@ def dqn_train(vis_env: Environment, dir_env: Environment, agent: Agent, pn: Neur
     last_a=5
     decs=len(agent.get_actions())-1
     
-    for episode in range(episodes):
-        if episode % 10 == 0:
-            epsilon -=.05
-        mse=0
-        curr_env=vis_env if episode % view_interval == 0 else dir_env
-        curr_env.clear()
-        
-        agent.set_p(curr_env.get_p())
-        agent.spawn()
-        # Sample
-        for t in range(time_steps):
-            choice=random.uniform(0, 1)
-            s1=agent.get_state()
+    
+    def sample():
+        for episode in range(episodes):
+            if episode % 10 == 0:
+                epsilon -=.05
+            mse=0
+            curr_env=vis_env if episode % view_interval == 0 else dir_env
+            curr_env.clear()
             
-            if epsilon >= choice:
-                a=random.randint(0, decs)
-            else:
-                a=policy_1.forward(s1)[1]
+            agent.set_p(curr_env.get_p())
+            agent.spawn()
+            # Sample
+            for t in range(time_steps):
+                choice=random.uniform(0, 1)
+                s1=agent.get_state()
                 
-            agent.move(a)
-            curr_env.step()
-            moved=agent.get_curr_pos()
-            #r=reward(abs_dist=agent.get_dist(), x=moved[0], y=moved[1], z=moved[2], f=curr_env.check_touching_ground(agent.get_id()))
-            r=(3*agent.get_dist())+(1.5*agent.get_traveled())
-            rewards.append(r)
-            last_a=a
-            replay.push(s1, a, r, agent.get_state())
+                if epsilon >= choice:
+                    a=random.randint(0, decs)
+                else:
+                    a=policy_1.forward(s1)[1]
+                    
+                agent.move(a)
+                curr_env.step()
+                moved=agent.get_curr_pos()
+                #r=reward(abs_dist=agent.get_dist(), x=moved[0], y=moved[1], z=moved[2], f=curr_env.check_touching_ground(agent.get_id()))
+                r=(3*agent.get_dist())+(1.5*agent.get_traveled())
+                rewards.append(r)
+                last_a=a
+                replay.push(s1, a, r, agent.get_state())
+                
+            curr_env.clear()
             
-        curr_env.clear()
-        
-        training_batch = replay.sample(batch_size)
-        sum=0
-        n=len(training_batch)//2
+            training_batch = replay.sample(batch_size)
+            sum=0
+            n=len(training_batch)//2
         
         for x in range(0, len(training_batch) , 2):
             step1=training_batch[x]
@@ -287,10 +289,22 @@ def dqn_train(vis_env: Environment, dir_env: Environment, agent: Agent, pn: Neur
         print(episode, mse)
     plt.plot(np.array(rewards))
     plt.show()
-        
+
+
+
+
+
+
 def reward(abs_dist: float):
     
     return ("temp")
+
+
+
+
+
+
+
 
 def define_actions(joints: list, vals: list):
     act=[]
@@ -299,73 +313,94 @@ def define_actions(joints: list, vals: list):
         for j in joints:
             act.append((v,j))
     return act
-startPos = [0,0,0.18]
-ornPos = [0,0, 0.18, 0]
-startOrientation = p.getQuaternionFromEuler([0,0,0])  
-# Initial Params
-current_environment ="plane"
-time_interval = .1 #seconds
-min_force, max_force = 1, 200
-actions={"forward": 1.2, "reset": 0, 'backward': -1.2}
-vals=[-15, -7, 7, 15]
-# p_net_weights='nn_models/policy_1.pth'
-# t_net_weights='nn_models/target_1.pth'
 
-gui_sim=Environment(map=current_environment, render=True)
-direct_sim=Environment(map=current_environment, render=False)
-conn=DriveConnection()
-prototype_agent = Agent(model='simple_dude', start_pos=startPos, phys_id=gui_sim.get_p(), vals=vals)
 
-joints=list(prototype_agent.get_joints().keys())
-states=len(joints)
 
-act=define_actions(joints=joints, vals=vals)
-index=0
 
-policy_1=NeuralNetwork(name='policy_1', num_actions=len(act), num_states=states*2)
-target_1=NeuralNetwork(name='target_1', num_actions=len(act), num_states=states*2)
 
-replay_memory = ReplayMemory(max=10000)
 
-pol_optim = torch.optim.SGD(policy_1.parameters(), lr=0.01)
-target_optim = torch.optim.SGD(target_1.parameters(), lr=0.01)
 
-data=load_session_data(hp_name='model1_HP.json', model_name='model1', conn=conn)
 
-print(data)
-# dqn_train(vis_env=gui_sim, dir_env=direct_sim, agent=prototype_agent, pn=policy_1, tn=target_1, epsilon=epsilon, 
-#             episodes=episodes, time_steps=time_steps, view_interval=view_interval, actions=actions, batch_size=batch_size, replay=replay_memory,
-#             po=pol_optim, to=target_optim)
 
-data={  
-        'model_name': 'first',
-        'replay_memory': replay_memory,
-        'policy_net_parameters': policy_1.state_dict,
-        'target_net_parameters': target_1.state_dict
-    }
 
-save_session_data(data=data, conn=conn)
-gui_sim.clear()
-direct_sim.clear()
 
-prototype_agent.set_p(gui_sim.get_p())
-prototype_agent.spawn()
-tick=0
-print(prototype_agent.get_joints())
+
+
+
+
+
+
+
 
 
 if __name__ == "__main__":
-        
-        tick+=1
-        a=policy_1.forward(prototype_agent.get_state())[1]
-        prototype_agent.get_curr_pos()
-        print(prototype_agent.get_state())
-        
-        prototype_agent.move(a)
-        gui_sim.step()
-        
-        
-        if tick % 3000 == 0:
-            print(prototype_agent.get_dist())
-            gui_sim.clear()
-            prototype_agent.spawn() 
+    startPos = [0,0,0.18]
+    ornPos = [0,0, 0.18, 0]
+    startOrientation = p.getQuaternionFromEuler([0,0,0])  
+    # Initial Params
+    current_environment ="plane"
+    time_interval = .1 #seconds
+    min_force, max_force = 1, 200
+    actions={"forward": 1.2, "reset": 0, 'backward': -1.2}
+    vals=[-15, -7, 7, 15]
+    # p_net_weights='nn_models/policy_1.pth'
+    # t_net_weights='nn_models/target_1.pth'
+
+    gui_sim=Environment(map=current_environment, render=True)
+    direct_sim=Environment(map=current_environment, render=False)
+    conn=DriveConnection()
+    prototype_agent = Agent(model='simple_dude', start_pos=startPos, phys_id=gui_sim.get_p(), vals=vals)
+
+    joints=list(prototype_agent.get_joints().keys())
+    states=len(joints)
+
+    act=define_actions(joints=joints, vals=vals)
+    index=0
+
+    policy_1=NeuralNetwork(name='policy_1', num_actions=len(act), num_states=states*2)
+    target_1=NeuralNetwork(name='target_1', num_actions=len(act), num_states=states*2)
+
+    replay_memory = ReplayMemory(max=10000)
+
+    pol_optim = torch.optim.SGD(policy_1.parameters(), lr=0.01)
+    target_optim = torch.optim.SGD(target_1.parameters(), lr=0.01)
+
+    data=load_session_data(hp_name='model1_HP.json', model_name='model1', conn=conn)
+
+    print(data)
+    # dqn_train(vis_env=gui_sim, dir_env=direct_sim, agent=prototype_agent, pn=policy_1, tn=target_1, epsilon=epsilon, 
+    #             episodes=episodes, time_steps=time_steps, view_interval=view_interval, actions=actions, batch_size=batch_size, replay=replay_memory,
+    #             po=pol_optim, to=target_optim)
+
+    data={  
+            'model_name': 'first',
+            'replay_memory': replay_memory,
+            'policy_net_parameters': policy_1.state_dict,
+            'target_net_parameters': target_1.state_dict
+        }
+
+    save_session_data(data=data, conn=conn)
+    gui_sim.clear()
+    direct_sim.clear()
+
+    prototype_agent.set_p(gui_sim.get_p())
+    prototype_agent.spawn()
+    tick=0
+
+    
+    
+
+    
+    tick+=1
+    a=policy_1.forward(prototype_agent.get_state())[1]
+    prototype_agent.get_curr_pos()
+    print(prototype_agent.get_state())
+    
+    prototype_agent.move(a)
+    gui_sim.step()
+    
+    
+    if tick % 3000 == 0:
+        print(prototype_agent.get_dist())
+        gui_sim.clear()
+        prototype_agent.spawn() 
