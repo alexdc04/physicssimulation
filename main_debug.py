@@ -233,7 +233,7 @@ def dqn_train(vis_env: Environment, dir_env: Environment, agent: Agent, pn: Neur
     last_a=5
     decs=len(agent.get_actions())-1
     
-    
+    discount=1
     def sample():
         for episode in range(episodes):
             if episode % 10 == 0:
@@ -291,20 +291,9 @@ def dqn_train(vis_env: Environment, dir_env: Environment, agent: Agent, pn: Neur
     plt.show()
 
 
-
-
-
-
 def reward(abs_dist: float):
     
     return ("temp")
-
-
-
-
-
-
-
 
 def define_actions(joints: list, vals: list):
     act=[]
@@ -313,25 +302,6 @@ def define_actions(joints: list, vals: list):
         for j in joints:
             act.append((v,j))
     return act
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 if __name__ == "__main__":
     startPos = [0,0,0.18]
