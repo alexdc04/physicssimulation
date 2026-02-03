@@ -1,0 +1,16 @@
+{
+
+    "Meta_Data": 
+    [
+        {
+            "Trainer": "",
+            "Network_Model": "D",
+            "URDF_File": "D",
+            "Iterations": "",
+            "Notes": "",
+            "Hyperparameters": ".json"
+        }
+    ]
+
+    
+}
