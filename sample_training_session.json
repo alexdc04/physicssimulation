@@ -1,16 +1,33 @@
 {
-
     "Meta_Data": 
     [
         {
             "Trainer": "",
-            "Network_Model": "D",
-            "URDF_File": "D",
+            "Network_Model": "",
+            "URDF_File": "",
             "Iterations": "",
-            "Notes": "",
-            "Hyperparameters": ".json"
+            "Hyperparameters": ".json",
+            "Episode_Observation_Interval": "",
+            "Noted_Learned_Behavior": ""
+        }
+    ],
+
+    "Situation":
+    [
+        {
+            "Scenario": "",
+            "Goal": "",
+            "Reward_Function": ""
+        }
+    ],
+
+    "Stats":
+    [
+        {
+            "Distance": "", 
+            "Energy": "", 
+            "Delta_Distance": ""
         }
     ]
 
-    
 }
