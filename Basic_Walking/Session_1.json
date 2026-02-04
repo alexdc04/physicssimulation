@@ -7,10 +7,24 @@
             "Noted_Learned_Behavior": ""
         },
 
+    "Physics_Settings": {
+        "Gravity": "(0,0,-10)",
+        "Starting_Position": "[0, 0, 1]",
+        "Starting_Orientation": "getQuaternionFromEuler([0,0,0])",
+        "Clients": {
+            "1": "GUI",
+            "2": "Direct"
+        }
+    },  
+
     "Situation": {
             "Scenario": "Agent will start in a flat environment and the end goal will be to learn movemnent. Whether it be humaniod walking or otherwise.",
             "Goal": "Agent will prioritize absolute distance from the origin.",
-            "Reward_Function": "Absolute distance rewarded."
+            "Reward_Function": "Absolute distance rewarded.",
+            "#_Of_Agents": "",
+            "Possible_Actions": {},
+            "Enviroment_URDF": "",
+            "Agent_URDF(s)": ""
         },
 
     "Hyperparameters": {

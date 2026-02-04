@@ -92,17 +92,33 @@ class NeuralNetwork(nn.Module):
         def save(self, dir: str):
             torch.save(self.state_dict(), f'{dir}/{self.name}.pth')
 
+Client_Ids = {}
+
+class Simulation():
+    def __init__(self, name: str):
+        self.name=name
+        self.a_ids={} #Agent Ids
+        self.b_ids={} #Bullet Client Ids
+    
+    def initialize():
+        print("placeholder")
+    
+    def get_status():
+        print("placeholder")
+    
+    def get_phys_ids():
+        print("placeholder")
+        
+    def placeholder():
+        print("placeholder")
+    
+    
+        
 if __name__ == "__main__":
     
     dir_name='Basic_Walking'
     session_no=1
     network_dims=""
-    
-    
-    
-    
-    
-    
     
     hyp_params, policy, target = initialize(dir_name, session_no)
     
