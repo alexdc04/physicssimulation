@@ -11,10 +11,8 @@
         "Gravity": "(0,0,-10)",
         "Starting_Position": "[0, 0, 1]",
         "Starting_Orientation": "getQuaternionFromEuler([0,0,0])",
-        "Clients": {
-            "1": "GUI",
-            "2": "Direct"
-        }
+        "Render": 0,
+        "Client_Count": 2
     },  
 
     "Situation": {
@@ -24,7 +22,9 @@
             "#_Of_Agents": "",
             "Possible_Actions": {},
             "Enviroment_URDF": "",
-            "Agent_URDF(s)": ""
+            "Agent_URDF(s)": "",
+            "Time_Speed": "",
+            "Observation_Time": ""
         },
 
     "Hyperparameters": {

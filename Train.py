@@ -11,12 +11,9 @@ Basic DQN (Deep Q Nework) algorithm:
         a) Run a 
     4. We then move back to step 2 adjusting reward and hyperparameters while observing changes.
 
-
 Decision making:
     In order to prevent model tunnelvision to a particular solution, a greedy epsilon algorithm is used. 
     This is like a regular greedy algo, prioritizing max reward, while maintaining epsilon randomness. Some random actions are taken in order to find potential innovation.
-    
-
 
 Author:   <Cj Pong/Hood Senior Project Team>
 Created:  <02/03/2025>
@@ -32,12 +29,11 @@ Dependencies:
     Pandas
 
 Usage:
-    1. First create a session_#.json according to the sample (first 3 sections in JSON).
+    1. First create a sesion_#.json according to the sample (first 3 sections in JSON).
     2. Fill out parameters in main section.
     3. Run program to train data and observe results.
     4. Save data to retrain next session.
 """
-
 import os
 import pybullet as p
 import time
@@ -57,21 +53,9 @@ import json
 from pathlib import Path
 from modules.data_processing import *
 import torch.nn as nn
+from collections import namedtuple, deque
 
-def initialize(dir_name: str, session_no: int) -> tuple:
-    """Loads session data for a given scenario and session.
 
-    Args:
-        dir_name: Scenario data directory.
-        session_no: Session Number.
-
-    Returns:
-        Hyperparameters - Dict \n
-        Target Network Parameters - Dict \n
-        Policy Network Parameters - Dict \n
-    """
-    data=load_json(dir_name, f'Session_{session_no}')
-    return data["Hyperparameters"], data['Target'], data['Policy']
 
 class NeuralNetwork(nn.Module):
         def __init__(self, name, num_actions, num_states):
@@ -92,28 +76,142 @@ class NeuralNetwork(nn.Module):
         def save(self, dir: str):
             torch.save(self.state_dict(), f'{dir}/{self.name}.pth')
 
+class ReplayMemory(object):
+    def __init__(self, max: int):
+        self.memory = deque([], maxlen=max)
+        
+    def push(self, *args):
+        '''
+        Save a transition (s, r, a, s).
+        
+        Args:
+            s_t(torch.tensor): State at step t.
+            a_t(float): Action chosen at step t.
+            r_t(float): Calculated reward at step t.
+            s_t+1(torch.tensor): Observed state at step t+1.
+            
+        '''
+        self.memory.append((args))
+
+    def sample(self, n):
+        '''Returns sample of batch size n.'''
+        return random.sample(self.memory, n)
+
+    def __len__(self):
+        return len(self.memory)
+        
+        
+
 Client_Ids = {}
 
-class Simulation():
-    def __init__(self, name: str):
+class PhysClient():
+    
+    def __init__(self, name: str, render=True):
         self.name=name
-        self.a_ids={} #Agent Ids
-        self.b_ids={} #Bullet Client Ids
+        self.objects={}
+        self.state_tensor=None
+        start=time.time()
+        mode=p.DIRECT
+        print("\nLoading Client")
+        if render: mode=p.GUI
+        self.id = bc.BulletClient(mode)
+        p.setAdditionalSearchPath(pybullet_data.getDataPath())
+        print(f"Finished! Time Elapsed: {time.time()-start}")
+        self.set_gravity()
+        
+    def get_status(self):
+        print(f"\nServer: {self.name} | Status: {self.id.isConnected()} | Entities: {self.objects.keys()}")
+        
+    def load_entities(self, file_names: list, map='plane.urdf'):
+        self.id.loadURDF(map)
+        for file in file_names:
+            temp=self.id.loadURDF(read_xacro(file))
+            self.objects[temp]=(file, self.generate_joints_dict(id=temp))
+            self.state_tensor=self.get_state(obj_id=temp)
+            print(self.state_tensor)
     
-    def initialize():
-        print("placeholder")
+    def set_gravity(self, grav=(0,0,-10)):
+        self.id.setGravity(grav[0], grav[1], grav[2])
+        print(f"\nServer {self.name} gravity set to: {grav}.")
     
-    def get_status():
-        print("placeholder")
+    def get_state(self, obj_id: int) -> torch.tensor:
+        # Joints are paired (pos, vel)
+        return torch.tensor(np.array([(x[0], x[1]) for x in self.id.getJointStates(bodyUniqueId=obj_id, jointIndices=list((self.objects[obj_id][1]).keys()))])).flatten()
     
-    def get_phys_ids():
+    def get_pos(self, obj_id: int) -> tuple:
+        return (self.id.getBasePositionAndOrientation(bodyUniqueId=obj_id)[0])
+    
+    def change_state(self, obj_id: int, joints: list, values: list, mode: int):
+        move_type=(p.POSITION_CONTROL, p.VELOCITY_CONTROL, p.TORQUE_CONTROL)
+        self.id.setJointMotorControlArray(obj_id, joints, move_type[mode], values)
+    
+    def generate_joints_dict(self, id: int) -> dict:
+        return {(self.id.getJointInfo(bodyUniqueId=id, jointIndex=joint))[0]:(self.id.getJointInfo(bodyUniqueId=id, jointIndex=joint))[1] for joint in range(self.id.getNumJoints(id)) if (self.id.getJointInfo(bodyUniqueId=id, jointIndex=joint))[2] != p.JOINT_FIXED }
+    
+    def step(self):
+        self.id.stepSimulation()
+        
+    def clear(self):
+        for obj in self.objects:
+            self.id.removeBody(obj)
+        
+    def disconnect(self):
+        self.id.disconnect()
+        print(f"\nServer {self.name} disconnected.")
+
+class Simulation():
+    
+    def __init__(self, name: str,  num_of_clients: int, render=True):
+        self.name=name
+        self.gui_id=None
+        self.clients={i: PhysClient(i, render=False) for i in range(num_of_clients)}
+    
+        if render: self.gui_id=PhysClient('GUI', render=True)
+            
+
+    def observe(self, file_names: list, period=1000, render=True):
+        
+        if render: self.gui_id.load_entities(file_names)
+        for client in self.clients:
+            self.clients[client].load_entities(file_names) 
+        
+        start=time.time()
+        for i in range(period):
+            if render: self.gui_id.step()
+            for client in self.clients:
+                self.clients[client].step()
+                if i % 100 == 0:
+                    self.clients[client].get_status()
+            time.sleep(1./240.)
+        print(f"Finished one observation period. Time Elapsed: {time.time()-start}")
+        
+        if render:self.gui_id.clear()
+        for client in self.clients:
+            self.clients[client].clear()
+        
+    def train():
         print("placeholder")
         
-    def placeholder():
+    def learn():
         print("placeholder")
-    
-    
         
+def initialize(dir_name: str, session_no: int) -> tuple:
+    
+    """Loads session data for a given scenario and session.
+
+    Args:
+        dir_name: Scenario data directory.
+        session_no: Session Number.
+
+    Returns:
+        Hyperparameters - Dict \n
+        Target Network Parameters - Dict \n
+        Policy Network Parameters - Dict \n
+    """
+    data=load_json(dir_name, f'Session_{session_no}')
+    return data["Hyperparameters"], data['Target'], data['Policy'] 
+
+
 if __name__ == "__main__":
     
     dir_name='Basic_Walking'
@@ -121,8 +219,10 @@ if __name__ == "__main__":
     network_dims=""
     
     hyp_params, policy, target = initialize(dir_name, session_no)
-    
-    
+    session = Simulation("Test", render=True, num_of_clients=1)
+    session.observe(file_names=['simple_dude'], render=True, period=1000)
+    session.observe(file_names=['simple_dude'], render=True, period=1000)
+    session.observe(file_names=['simple_dude'], render=True, period=1000)
     
     
     
