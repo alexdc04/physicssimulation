@@ -55,8 +55,6 @@ from modules.data_processing import *
 import torch.nn as nn
 from collections import namedtuple, deque
 
-
-
 class NeuralNetwork(nn.Module):
         def __init__(self, name, num_actions, num_states):
             super().__init__()
@@ -99,10 +97,6 @@ class ReplayMemory(object):
 
     def __len__(self):
         return len(self.memory)
-        
-        
-
-Client_Ids = {}
 
 class PhysClient():
     
@@ -122,38 +116,49 @@ class PhysClient():
     def get_status(self):
         print(f"\nServer: {self.name} | Status: {self.id.isConnected()} | Entities: {self.objects.keys()}")
         
-    def load_entities(self, file_names: list, map='plane.urdf'):
+    def load_entities(self, file_names: list, agent_name: str, map='plane.urdf' ):
         self.id.loadURDF(map)
         for file in file_names:
             temp=self.id.loadURDF(read_xacro(file))
-            self.objects[temp]=(file, self.generate_joints_dict(id=temp))
-            self.state_tensor=self.get_state(obj_id=temp)
-            print(self.state_tensor)
+            self.objects[agent_name]=(temp, self.generate_joints_dict(temp))
+            self.state_tensor=self.get_state(agent_name=agent_name)
+            print(self.objects)
+    
+    def get_joint_dict(self, agent_name: str):
+        return self.objects[agent_name][1]
     
     def set_gravity(self, grav=(0,0,-10)):
         self.id.setGravity(grav[0], grav[1], grav[2])
         print(f"\nServer {self.name} gravity set to: {grav}.")
     
-    def get_state(self, obj_id: int) -> torch.tensor:
+    def get_state(self, agent_name: str) -> torch.tensor:
         # Joints are paired (pos, vel)
-        return torch.tensor(np.array([(x[0], x[1]) for x in self.id.getJointStates(bodyUniqueId=obj_id, jointIndices=list((self.objects[obj_id][1]).keys()))])).flatten()
+        return torch.tensor(np.array([(x[0], x[1]) for x in self.id.getJointStates(bodyUniqueId=self.objects[agent_name][0], jointIndices=list((self.objects[agent_name][1]).keys()))])).flatten()
     
-    def get_pos(self, obj_id: int) -> tuple:
-        return (self.id.getBasePositionAndOrientation(bodyUniqueId=obj_id)[0])
+    def get_pos(self, agent_name: str) -> tuple:
+        return (self.id.getBasePositionAndOrientation(bodyUniqueId=self.objects[agent_name][0])[0])
     
-    def change_state(self, obj_id: int, joints: list, values: list, mode: int):
+    def move_joints(self, agent_name: str, joints: list, values: list, mode: int):
         move_type=(p.POSITION_CONTROL, p.VELOCITY_CONTROL, p.TORQUE_CONTROL)
-        self.id.setJointMotorControlArray(obj_id, joints, move_type[mode], values)
+        self.id.setJointMotorControlArray(self.objects[agent_name][0], joints, move_type[mode], values)
+        
+    def move_joint(self, agent_name: str, joint: int, value: float, mode: int):
+        move_type=(p.POSITION_CONTROL, p.VELOCITY_CONTROL, p.TORQUE_CONTROL)
+        self.id.setJointMotorControl2(self.objects[agent_name][0], joint, move_type[mode], value)
     
-    def generate_joints_dict(self, id: int) -> dict:
+    def generate_joints_dict(self, id:int) -> dict:
         return {(self.id.getJointInfo(bodyUniqueId=id, jointIndex=joint))[0]:(self.id.getJointInfo(bodyUniqueId=id, jointIndex=joint))[1] for joint in range(self.id.getNumJoints(id)) if (self.id.getJointInfo(bodyUniqueId=id, jointIndex=joint))[2] != p.JOINT_FIXED }
+    
+    def generate_actions(self, values: tuple, agent_name: str):
+        return [(x, y) for x in values for y in list((self.get_joint_dict(agent_name)).keys())]
     
     def step(self):
         self.id.stepSimulation()
         
     def clear(self):
-        for obj in self.objects:
-            self.id.removeBody(obj)
+        self.id.resetSimulation()
+        self.id.loadURDF('plane.urdf')
+        self.set_gravity()
         
     def disconnect(self):
         self.id.disconnect()
@@ -161,39 +166,42 @@ class PhysClient():
 
 class Simulation():
     
-    def __init__(self, name: str,  num_of_clients: int, render=True):
+    def __init__(self, name: str,  num_of_clients: int, replay_mem: ReplayMemory, actions: dict, render=True):
         self.name=name
         self.gui_id=None
+        self.rm=replay_mem
         self.clients={i: PhysClient(i, render=False) for i in range(num_of_clients)}
-    
         if render: self.gui_id=PhysClient('GUI', render=True)
             
-
-    def observe(self, file_names: list, period=1000, render=True):
+    def observe(self, file_names: list, episodes: int, server_id: PhysClient, agent_name: str, epsilon: float, action_values: tuple, render: bool, period=1000):
+        server_id.load_entities(file_names, agent_name)
+        actions=server_id.generate_actions(values=action_values, agent_name=agent_name)
+        server_id.clear()
         
-        if render: self.gui_id.load_entities(file_names)
-        for client in self.clients:
-            self.clients[client].load_entities(file_names) 
+        for e in range(0, episodes):
         
-        start=time.time()
-        for i in range(period):
-            if render: self.gui_id.step()
-            for client in self.clients:
-                self.clients[client].step()
-                if i % 100 == 0:
-                    self.clients[client].get_status()
-            time.sleep(1./240.)
-        print(f"Finished one observation period. Time Elapsed: {time.time()-start}")
-        
-        if render:self.gui_id.clear()
-        for client in self.clients:
-            self.clients[client].clear()
-        
-    def train():
-        print("placeholder")
-        
+            server_id.load_entities(file_names, agent_name)
+            for i in range(period):
+                print(server_id.objects)
+                s1=server_id.get_state(agent_name=agent_name)
+                if random.uniform(0, 1) > epsilon:
+                    a=random.choice(actions)
+                else:
+                    a=random.choice(actions)
+                print(a)
+                server_id.move_joint(agent_name, joint=a[1], value=a[0], mode=0)
+                for x in range(0, 10000): self.rm.push((s1, server_id.get_pos(agent_name), a, server_id.get_state(agent_name=agent_name)))
+                server_id.step()
+                if render: time.sleep(1./240.)
+            
+            server_id.clear()
+            
     def learn():
         print("placeholder")
+    
+    
+    def get_replay_mem(self):
+        return self.rm
         
 def initialize(dir_name: str, session_no: int) -> tuple:
     
@@ -214,16 +222,21 @@ def initialize(dir_name: str, session_no: int) -> tuple:
 
 if __name__ == "__main__":
     
+    actions={
+        0: 1, #Move Forward 1 limb
+        1: 1, #Move Backward 1 limb
+        2: 1, #Dont Move 1 limb
+    }
+    
     dir_name='Basic_Walking'
     session_no=1
     network_dims=""
+    memory=ReplayMemory(10000)
     
     hyp_params, policy, target = initialize(dir_name, session_no)
-    session = Simulation("Test", render=True, num_of_clients=1)
-    session.observe(file_names=['simple_dude'], render=True, period=1000)
-    session.observe(file_names=['simple_dude'], render=True, period=1000)
-    session.observe(file_names=['simple_dude'], render=True, period=1000)
-    
-    
+    session = Simulation("Test", render=True, num_of_clients=0, actions=actions, replay_mem=memory)
+    session.observe(file_names=['simple_dude'], agent_name='dude', action_values=(-1.2, 0, 1.2), server_id=session.gui_id, epsilon=-1, render=True, period=1, episodes=1)
+    print(session.get_replay_mem().memory)
+    general_save(session.get_replay_mem(), 'Basic_Walking/replay_mems/')
     
 

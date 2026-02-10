@@ -4,7 +4,9 @@
             "Network_Model": "movenet_v1",
             "URDF_File": "simple_dude",
             "Episode_Observation_Interval": "1000",
-            "Noted_Learned_Behavior": ""
+            "Noted_Learned_Behavior": "",
+            "Replay_Mem_Key": "",
+            "Replay_Mem_Size": ""
         },
 
     "Physics_Settings": {
@@ -38,7 +40,7 @@
         },
 
     "Stats": {
-            "Distance": "", 
+            "Avg_Distance": "", 
             "Energy": "", 
             "Iterations": "",
             "Delta_Distance": ""

@@ -30,7 +30,8 @@ import json
 import io
 import pickle
 import time
-
+import string
+import random
 def read_xacro(file_name: str) -> str:
     """Loads xacro model into string.
 
@@ -71,5 +72,20 @@ def load_json(dir_name: str, file_name: str) -> dict:
         print(f"Invalid JSON: {e}")
     
     return data
-    
 
+def save_session_data():
+    print("placeholder")
+    
+def generate_random_key(length=16):
+        """Generates a general-purpose pseudo-random key of a specified length."""
+        # Define the possible characters for the key
+        characters = string.ascii_letters + string.digits
+        # Use random.choices with join to generate the string efficiently
+        key = ''.join(random.choices(characters, k=length))
+        return key
+
+def general_save(data: object, dir_path: str, key_length=16):
+    key=dir_path+generate_random_key(key_length)+'.pkl'
+    
+    with open(key, 'wb') as pkl_file:
+        pickle.dump(data, pkl_file)
