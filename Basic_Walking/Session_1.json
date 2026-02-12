@@ -2,8 +2,7 @@
     "Meta_Data": {
             "Trainer": "Cj Pong",
             "Network_Model": "movenet_v1",
-            "URDF_File": "simple_dude",
-            "Episode_Observation_Interval": "1000",
+            "Episode_Observation_Interval": 1000,
             "Noted_Learned_Behavior": "",
             "Replay_Mem_Key": "",
             "Replay_Mem_Size": ""
@@ -14,19 +13,18 @@
         "Starting_Position": "[0, 0, 1]",
         "Starting_Orientation": "getQuaternionFromEuler([0,0,0])",
         "Render": 0,
-        "Client_Count": 2
+        "Client_Count": 1
     },  
 
     "Situation": {
             "Scenario": "Agent will start in a flat environment and the end goal will be to learn movemnent. Whether it be humaniod walking or otherwise.",
             "Goal": "Agent will prioritize absolute distance from the origin.",
             "Reward_Function": "Absolute distance rewarded.",
-            "#_Of_Agents": "",
-            "Possible_Actions": {},
-            "Enviroment_URDF": "",
-            "Agent_URDF(s)": "",
-            "Time_Speed": "",
-            "Observation_Time": ""
+            "#_Of_Agents": 1,
+            "Possible_Actions": [-1.2, 0, 1.2],
+            "Enviroment_URDF": "plane.urdf",
+            "Agent_URDF(s)": "simple_dude",
+            "Observation_Time": 0
         },
 
     "Hyperparameters": {
@@ -46,6 +44,6 @@
             "Delta_Distance": ""
         },
 
-    "Target": {},
-    "Policy": {}
+    "Target": null,
+    "Policy": null
 }

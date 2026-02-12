@@ -72,6 +72,7 @@ class NeuralNetwork(nn.Module):
         
         def save(self, dir: str):
             torch.save(self.state_dict(), f'{dir}/{self.name}.pth')
+            
 
 class ReplayMemory(object):
     def __init__(self, max: int):
@@ -127,7 +128,7 @@ class PhysClient():
     
     def set_gravity(self, grav=(0,0,-10)):
         self.id.setGravity(grav[0], grav[1], grav[2])
-        print(f"\nServer {self.name} gravity set to: {grav}.")
+        #print(f"\nServer {self.name} gravity set to: {grav}.")
     
     def get_state(self, agent_name: str) -> torch.tensor:
         # Joints are paired (pos, vel)
@@ -170,6 +171,7 @@ class Simulation():
         self.rm=replay_mem
         self.pol=pol
         self.q=q
+        self.avg_dist=0
         self.clients={i: PhysClient(i, render=False) for i in range(num_of_clients)}
         if render: self.gui_id=PhysClient('GUI', render=True)
             
@@ -189,7 +191,7 @@ class Simulation():
                 else:
                     a=actions[int(self.q.forward(s1)[1])]
                 server_id.move_joint(agent_name, joint=a[1], value=a[0], mode=0)
-                self.rm.push((s1, server_id.get_pos(agent_name), a, server_id.get_state(agent_name=agent_name)))
+                for n in range(100000): self.rm.push((s1, server_id.get_pos(agent_name), a, server_id.get_state(agent_name=agent_name)))
                 server_id.step()
                 
                 if render: time.sleep(1./240.)
@@ -207,44 +209,40 @@ class Simulation():
     def get_replay_mem(self):
         return self.rm
         
-def initialize(dir_name: str, session_no: int) -> tuple:
-    
-    """Loads session data for a given scenario and session.
 
-    Args:
-        dir_name: Scenario data directory.
-        session_no: Session Number.
-
-    Returns:
-        Hyperparameters - Dict \n
-        Target Network Parameters - Dict \n
-        Policy Network Parameters - Dict \n
-    """
-    data=load_json(dir_name, f'Session_{session_no}')
-    return data["Hyperparameters"], data['Target'], data['Policy'] 
 
 
 if __name__ == "__main__":
     
+    device = torch.device(
+    "cuda" if torch.cuda.is_available() else
+    "mps" if torch.backends.mps.is_available() else
+    "cpu"
+    )
+    
+    settings, situation, hyperparameters=initialize(dir_name='Basic_Walking', session_no='1')
+    
     actions={
-        0: 1, #Move Forward 1 limb
-        1: 1, #Move Backward 1 limb
-        2: 1, #Dont Move 1 limb
+        0: 1,
+        1: 1,
+        2: 1
     }
+    
     
     dir_name='Basic_Walking'
     session_no=1
     network_dims=""
-    memory=ReplayMemory(10000)
-    policy_network=NeuralNetwork('pol', 15, 10)
-    q_network=NeuralNetwork('q', 15, 10)
+    memory=ReplayMemory(100000)
+    policy_network=NeuralNetwork('pol', 15, 10).to(device)
+    q_network=NeuralNetwork('q', 15, 10).to(device)
+    q_network.load_state_dict(policy_network.state_dict())
     
     hyp_params, policy, target = initialize(dir_name, session_no)
     session = Simulation("Test", render=True, num_of_clients=1, actions=actions, replay_mem=memory, pol=policy_network, q=q_network)
     session.observe(file_names=['simple_dude'], agent_name='dude', action_values=(-1.2, 0, 1.2), 
-                    server_id=session.gui_id, epsilon=.5, render=False, period=100, episodes=50)
+                    server_id=session.gui_id, epsilon=.5, render=False, period=1, episodes=1)
     session.learn(20, .6)
     
-    #general_save(session.get_replay_mem(), 'Basic_Walking/replay_mems/')
+    general_save(session.get_replay_mem(), 'Basic_Walking/replay_mems/')
     
 

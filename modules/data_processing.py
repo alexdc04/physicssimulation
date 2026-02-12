@@ -89,3 +89,22 @@ def general_save(data: object, dir_path: str, key_length=16):
     
     with open(key, 'wb') as pkl_file:
         pickle.dump(data, pkl_file)
+        
+def initialize(dir_name: str, session_no: int) -> tuple:
+    
+    """Loads session data for a given scenario and session.
+
+    Args:
+        dir_name: Scenario data directory.
+        session_no: Session Number.
+
+    Returns:
+        Hyperparameters - Dict \n
+        Target Network Parameters - Dict \n
+        Policy Network Parameters - Dict \n
+    """
+    data=load_json(dir_name, f'Session_{session_no}')
+    pol=None
+    target=None
+    
+    return data["Physics_Settings"], data['Situation'], data['Hyperparameters']
