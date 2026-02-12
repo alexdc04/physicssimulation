@@ -54,7 +54,6 @@ from pathlib import Path
 from modules.data_processing import *
 import torch.nn as nn
 from collections import namedtuple, deque
-
 class NeuralNetwork(nn.Module):
         def __init__(self, name, num_actions, num_states):
             super().__init__()
@@ -68,7 +67,7 @@ class NeuralNetwork(nn.Module):
             )
 
         def forward(self, x):
-            x = self.linear_relu_stack(x)
+            x = self.linear_relu_stack(x.float())
             return x, torch.argmax(x).int()
         
         def save(self, dir: str):
@@ -116,13 +115,12 @@ class PhysClient():
     def get_status(self):
         print(f"\nServer: {self.name} | Status: {self.id.isConnected()} | Entities: {self.objects.keys()}")
         
-    def load_entities(self, file_names: list, agent_name: str, map='plane.urdf' ):
+    def load_entities(self, file_names: list, agent_name: str, map='plane.urdf'):
         self.id.loadURDF(map)
         for file in file_names:
             temp=self.id.loadURDF(read_xacro(file))
             self.objects[agent_name]=(temp, self.generate_joints_dict(temp))
             self.state_tensor=self.get_state(agent_name=agent_name)
-            print(self.objects)
     
     def get_joint_dict(self, agent_name: str):
         return self.objects[agent_name][1]
@@ -166,10 +164,12 @@ class PhysClient():
 
 class Simulation():
     
-    def __init__(self, name: str,  num_of_clients: int, replay_mem: ReplayMemory, actions: dict, render=True):
+    def __init__(self, name: str,  num_of_clients: int, replay_mem: ReplayMemory, actions: dict, pol: NeuralNetwork, q: NeuralNetwork, render=True):
         self.name=name
         self.gui_id=None
         self.rm=replay_mem
+        self.pol=pol
+        self.q=q
         self.clients={i: PhysClient(i, render=False) for i in range(num_of_clients)}
         if render: self.gui_id=PhysClient('GUI', render=True)
             
@@ -179,26 +179,30 @@ class Simulation():
         server_id.clear()
         
         for e in range(0, episodes):
-        
+            
             server_id.load_entities(file_names, agent_name)
             for i in range(period):
-                print(server_id.objects)
+                
                 s1=server_id.get_state(agent_name=agent_name)
                 if random.uniform(0, 1) > epsilon:
                     a=random.choice(actions)
                 else:
-                    a=random.choice(actions)
-                print(a)
+                    a=actions[int(self.q.forward(s1)[1])]
                 server_id.move_joint(agent_name, joint=a[1], value=a[0], mode=0)
-                for x in range(0, 10000): self.rm.push((s1, server_id.get_pos(agent_name), a, server_id.get_state(agent_name=agent_name)))
+                self.rm.push((s1, server_id.get_pos(agent_name), a, server_id.get_state(agent_name=agent_name)))
                 server_id.step()
+                
                 if render: time.sleep(1./240.)
             
             server_id.clear()
             
-    def learn():
-        print("placeholder")
-    
+    def learn(self, batch_size: int, gamma: float):
+        training_batch=self.rm.sample(batch_size)
+        states=torch.stack([t[0][0] for t in training_batch])
+        targets=torch.stack([t[0][3] for t in training_batch])
+        n=len(training_batch)//2
+        loss=nn.MSELoss()
+        loss=(states, targets)
     
     def get_replay_mem(self):
         return self.rm
@@ -232,11 +236,15 @@ if __name__ == "__main__":
     session_no=1
     network_dims=""
     memory=ReplayMemory(10000)
+    policy_network=NeuralNetwork('pol', 15, 10)
+    q_network=NeuralNetwork('q', 15, 10)
     
     hyp_params, policy, target = initialize(dir_name, session_no)
-    session = Simulation("Test", render=True, num_of_clients=0, actions=actions, replay_mem=memory)
-    session.observe(file_names=['simple_dude'], agent_name='dude', action_values=(-1.2, 0, 1.2), server_id=session.gui_id, epsilon=-1, render=True, period=1, episodes=1)
-    print(session.get_replay_mem().memory)
-    general_save(session.get_replay_mem(), 'Basic_Walking/replay_mems/')
+    session = Simulation("Test", render=True, num_of_clients=1, actions=actions, replay_mem=memory, pol=policy_network, q=q_network)
+    session.observe(file_names=['simple_dude'], agent_name='dude', action_values=(-1.2, 0, 1.2), 
+                    server_id=session.gui_id, epsilon=.5, render=False, period=100, episodes=50)
+    session.learn(20, .6)
+    
+    #general_save(session.get_replay_mem(), 'Basic_Walking/replay_mems/')
     
 
