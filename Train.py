@@ -34,6 +34,8 @@ Usage:
     3. Run program to train data and observe results.
     4. Save data to retrain next session.
 """
+
+# imports
 import os
 import pybullet as p
 import time
@@ -54,6 +56,8 @@ from pathlib import Path
 from modules.data_processing import *
 import torch.nn as nn
 from collections import namedtuple, deque
+
+# neural network class
 class NeuralNetwork(nn.Module):
         def __init__(self, name, num_actions, num_states):
             super().__init__()
@@ -73,8 +77,10 @@ class NeuralNetwork(nn.Module):
         def save(self, dir: str):
             torch.save(self.state_dict(), f'{dir}/{self.name}.pth')
             
-
+# save a collection of states as a replay
 class ReplayMemory(object):
+    
+    # create a deque with a maximum length of max to store state information
     def __init__(self, max: int):
         self.memory = deque([], maxlen=max)
         
@@ -89,18 +95,33 @@ class ReplayMemory(object):
             s_t+1(torch.tensor): Observed state at step t+1.
             
         '''
+        # append to memory
         self.memory.append((args))
 
     def sample(self, n):
-        '''Returns sample of batch size n.'''
+        # returns sample of batch size n 
         return random.sample(self.memory, n)
 
+    # returns length of memory deque
     def __len__(self):
         return len(self.memory)
 
+# create physics client
 class PhysClient():
-    
-    def __init__(self, name: str, render=True):
+
+    def __init__(self, name: str, render=True, sim_map = 'plane_urdf'):
+        '''
+        Initialize the physics client
+        
+        Variables:
+            name: self-explanatory
+            objects: a dictionary containing objects within the physics client
+            state_tensor: initialized as Null
+            start: start time
+            mode: can be either DIRECT (w/o GUI) or GUI (starts w/ GUI, believe it or not)
+            sim_map: what file to use for the base of the simulation
+            id: refers to the PyBullet client
+        '''
         self.name=name
         self.objects={}
         self.state_tensor=None
@@ -108,57 +129,79 @@ class PhysClient():
         mode=p.DIRECT
         print("\nLoading Client")
         if render: mode=p.GUI
+
+        # create a new client
         self.id = bc.BulletClient(mode)
+
+        # path for data files
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
         print(f"Finished! Time Elapsed: {time.time()-start}")
         self.set_gravity()
         
+    # check server name, current connected status, and what objects are present
     def get_status(self):
         print(f"\nServer: {self.name} | Status: {self.id.isConnected()} | Entities: {self.objects.keys()}")
         
-    def load_entities(self, file_names: list, agent_name: str, map='plane.urdf'):
-        self.id.loadURDF(map)
+    # load entities into the server from URDF/XACRO files
+    def load_entities(self, file_names: list, agent_name: str):
+        # load the map first
+        self.id.loadURDF(self.sim_map)
+
+        # for each file given in file_names, load the file, generate joints
         for file in file_names:
             temp=self.id.loadURDF(read_xacro(file))
             self.objects[agent_name]=(temp, self.generate_joints_dict(temp))
             self.state_tensor=self.get_state(agent_name=agent_name)
     
+    # return joints belonging to a particular agent
     def get_joint_dict(self, agent_name: str):
         return self.objects[agent_name][1]
     
+    # sets three-dimensional gravity for simulation (x, y, z)
+    # a negative value will pull towards the origin from a given direction
     def set_gravity(self, grav=(0,0,-10)):
         self.id.setGravity(grav[0], grav[1], grav[2])
         #print(f"\nServer {self.name} gravity set to: {grav}.")
     
+    # get the current state as a tensor
     def get_state(self, agent_name: str) -> torch.tensor:
         # Joints are paired (pos, vel)
         return torch.tensor(np.array([(x[0], x[1]) for x in self.id.getJointStates(bodyUniqueId=self.objects[agent_name][0], jointIndices=list((self.objects[agent_name][1]).keys()))])).flatten()
     
+    # return position and orientation
     def get_pos(self, agent_name: str) -> tuple:
         return (self.id.getBasePositionAndOrientation(bodyUniqueId=self.objects[agent_name][0])[0])
     
+    # to move multiple joints at once
     def move_joints(self, agent_name: str, joints: list, values: list, mode: int):
         move_type=(p.POSITION_CONTROL, p.VELOCITY_CONTROL, p.TORQUE_CONTROL)
         self.id.setJointMotorControlArray(self.objects[agent_name][0], joints, move_type[mode], values)
         
+    # to move one joint at a time
     def move_joint(self, agent_name: str, joint: int, value: float, mode: int):
         move_type=(p.POSITION_CONTROL, p.VELOCITY_CONTROL, p.TORQUE_CONTROL)
         self.id.setJointMotorControl2(self.objects[agent_name][0], joint, move_type[mode], value)
     
+    # create a dictionary of all joint information so long as joints are not fixed
+    # joint id: information
     def generate_joints_dict(self, id:int) -> dict:
         return {(self.id.getJointInfo(bodyUniqueId=id, jointIndex=joint))[0]:(self.id.getJointInfo(bodyUniqueId=id, jointIndex=joint))[1] for joint in range(self.id.getNumJoints(id)) if (self.id.getJointInfo(bodyUniqueId=id, jointIndex=joint))[2] != p.JOINT_FIXED }
     
+    # what action will each joint take based on its joint_dict?
     def generate_actions(self, values: tuple, agent_name: str):
         return [(x, y) for x in values for y in list((self.get_joint_dict(agent_name)).keys())]
     
+    # move the simulation forward discretely
     def step(self):
         self.id.stepSimulation()
         
+    # clear all objects and load map
     def clear(self):
         self.id.resetSimulation()
-        self.id.loadURDF('plane.urdf')
+        self.id.loadURDF(self.sim_map)
         self.set_gravity()
         
+    # disconnect server
     def disconnect(self):
         self.id.disconnect()
         print(f"\nServer {self.name} disconnected.")
