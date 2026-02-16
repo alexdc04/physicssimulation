@@ -209,9 +209,6 @@ class Simulation():
     def get_replay_mem(self):
         return self.rm
         
-
-
-
 if __name__ == "__main__":
     
     device = torch.device(
