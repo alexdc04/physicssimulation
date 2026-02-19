@@ -73,7 +73,6 @@ class NeuralNetwork(nn.Module):
         def save(self, dir: str):
             torch.save(self.state_dict(), f'{dir}/{self.name}.pth')
             
-
 class ReplayMemory(object):
     def __init__(self, max: int):
         self.memory = deque([], maxlen=max)
@@ -148,7 +147,7 @@ class PhysClient():
     def generate_joints_dict(self, id:int) -> dict:
         return {(self.id.getJointInfo(bodyUniqueId=id, jointIndex=joint))[0]:(self.id.getJointInfo(bodyUniqueId=id, jointIndex=joint))[1] for joint in range(self.id.getNumJoints(id)) if (self.id.getJointInfo(bodyUniqueId=id, jointIndex=joint))[2] != p.JOINT_FIXED }
     
-    def generate_actions(self, values: tuple, agent_name: str):
+    def generate_actions(self, values: tuple, agent_name: str) -> list:
         return [(x, y) for x in values for y in list((self.get_joint_dict(agent_name)).keys())]
     
     def step(self):
@@ -191,14 +190,14 @@ class Simulation():
                 else:
                     a=actions[int(self.q.forward(s1)[1])]
                 server_id.move_joint(agent_name, joint=a[1], value=a[0], mode=0)
-                for n in range(100000): self.rm.push((s1, server_id.get_pos(agent_name), a, server_id.get_state(agent_name=agent_name)))
+                self.rm.push((s1, server_id.get_pos(agent_name), a, server_id.get_state(agent_name=agent_name)))
                 server_id.step()
                 
                 if render: time.sleep(1./240.)
             
             server_id.clear()
             
-    def learn(self, batch_size: int, gamma: float):
+    def deep_Q_learn(self, batch_size: int, gamma: float):
         training_batch=self.rm.sample(batch_size)
         states=torch.stack([t[0][0] for t in training_batch])
         targets=torch.stack([t[0][3] for t in training_batch])
@@ -208,9 +207,6 @@ class Simulation():
     
     def get_replay_mem(self):
         return self.rm
-        
-
-
 
 if __name__ == "__main__":
     
@@ -227,20 +223,21 @@ if __name__ == "__main__":
         1: 1,
         2: 1
     }
-    
+    action_space=15
+    observation_space=10
     
     dir_name='Basic_Walking'
     session_no=1
     network_dims=""
     memory=ReplayMemory(100000)
-    policy_network=NeuralNetwork('pol', 15, 10).to(device)
-    q_network=NeuralNetwork('q', 15, 10).to(device)
+    policy_network=NeuralNetwork('pol', action_space, observation_space).to(device)
+    q_network=NeuralNetwork('q', action_space, observation_space).to(device)
     q_network.load_state_dict(policy_network.state_dict())
     
     hyp_params, policy, target = initialize(dir_name, session_no)
     session = Simulation("Test", render=True, num_of_clients=1, actions=actions, replay_mem=memory, pol=policy_network, q=q_network)
     session.observe(file_names=['simple_dude'], agent_name='dude', action_values=(-1.2, 0, 1.2), 
-                    server_id=session.gui_id, epsilon=.5, render=False, period=1, episodes=1)
+                    server_id=session.gui_id, epsilon=.5, render=True, period=1000, episodes=2)
     session.learn(20, .6)
     
     general_save(session.get_replay_mem(), 'Basic_Walking/replay_mems/')
