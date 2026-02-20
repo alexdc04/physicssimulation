@@ -77,10 +77,6 @@ class NeuralNetwork(nn.Module):
         def save(self, dir: str):
             torch.save(self.state_dict(), f'{dir}/{self.name}.pth')
             
-<<<<<<< HEAD
-=======
-# save a collection of states as a replay
->>>>>>> 7dbcdd167ba0f0420022909612699ba0386487e2
 class ReplayMemory(object):
     
     # create a deque with a maximum length of max to store state information
@@ -112,7 +108,7 @@ class ReplayMemory(object):
 # create physics client
 class PhysClient():
 
-    def __init__(self, name: str, render=True, sim_map = 'plane_urdf'):
+    def __init__(self, name: str, render=True, sim_map = 'plane.urdf'):
         '''
         Initialize the physics client
         
@@ -128,6 +124,7 @@ class PhysClient():
         self.name=name
         self.objects={}
         self.state_tensor=None
+        self.sim_map=sim_map
         start=time.time()
         mode=p.DIRECT
         print("\nLoading Client")
@@ -190,12 +187,7 @@ class PhysClient():
     def generate_joints_dict(self, id:int) -> dict:
         return {(self.id.getJointInfo(bodyUniqueId=id, jointIndex=joint))[0]:(self.id.getJointInfo(bodyUniqueId=id, jointIndex=joint))[1] for joint in range(self.id.getNumJoints(id)) if (self.id.getJointInfo(bodyUniqueId=id, jointIndex=joint))[2] != p.JOINT_FIXED }
     
-<<<<<<< HEAD
     def generate_actions(self, values: tuple, agent_name: str) -> list:
-=======
-    # what action will each joint take based on its joint_dict?
-    def generate_actions(self, values: tuple, agent_name: str):
->>>>>>> 7dbcdd167ba0f0420022909612699ba0386487e2
         return [(x, y) for x in values for y in list((self.get_joint_dict(agent_name)).keys())]
     
     # move the simulation forward discretely
@@ -255,14 +247,11 @@ class Simulation():
         n=len(training_batch)//2
         loss=nn.MSELoss()
         loss=(states, targets)
-    
+        
+        
     def get_replay_mem(self):
         return self.rm
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> 7dbcdd167ba0f0420022909612699ba0386487e2
+    
 if __name__ == "__main__":
     
     device = torch.device(
