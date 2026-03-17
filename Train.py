@@ -127,6 +127,7 @@ class PhysClient():
         self.objects={}
         self.state_tensor=None
         self.sim_map=sim_map
+        self.sim_map_id=None
         start=time.time()
         mode=p.DIRECT
         print("\nLoading Client")
@@ -147,7 +148,7 @@ class PhysClient():
     # load entities into the server from URDF/XACRO files
     def load_entities(self, file_names: list, agent_name: str):
         # load the map first
-        self.id.loadURDF(self.sim_map)
+        self.sim_map_id=self.id.loadURDF(self.sim_map)
 
         # for each file given in file_names, load the file, generate joints
         for file in file_names:
@@ -194,6 +195,12 @@ class PhysClient():
     def generate_actions(self, values: tuple, agent_name: str) -> list:
         return [(x, y) for x in values for y in list((self.get_joint_dict(agent_name)).keys())]
     
+    def check_collision(self, agent_name: str) -> tuple:
+        return (self.id.getContactPoints(bodyA=self.objects[agent_name][0], bodyB=self.sim_map_id))
+    
+    def is_back_grounded(self, agent_name: str)-> bool:
+        if any(c[3] == -1 for c in self.check_collision(agent_name=agent_name)): return True
+        
     # move the simulation forward discretely
     def step(self):
         self.id.stepSimulation()
@@ -244,10 +251,11 @@ class Simulation():
                 server_id.move_joint(agent_name, joint=a[1], value=a[0], mode=0)
                 server_id.step()
                 #to punish stillness
-                if math.abs(server_id.get_vel(agent_name)) > .2:
-                    r=1
+                if abs(server_id.get_vel(agent_name)[0][0]) > .2:
+                    r=2**server_id.get_vel(agent_name)[0][0]
                 else:
-                    r=-.5
+                    r=-1
+                if server_id.is_back_grounded(agent_name=agent_name): r-=2
                 self.rm.push((s1, a, sum(server_id.get_pos(agent_name))+r, torch.tensor(server_id.get_state_tensor(agent_name=agent_name)[0])))
                 
                 if render: time.sleep(1./240.)
@@ -306,8 +314,9 @@ class Simulation():
         server_id.load_entities(file_names, agent_name)
         for x in range(period):
             a=actions[(q(torch.tensor(server_id.get_state_tensor(agent_name=agent_name)[0])))[1]]
+            print(a)
             server_id.move_joint(agent_name, joint=a[1], value=a[0], mode=0)
-            print((server_id.get_vel(agent=agent_name))[0][0])
+            print((server_id.get_vel(agent=agent_name))[0][0], server_id.is_back_grounded(agent_name=agent_name))
             server_id.step()
             time.sleep(1./240.)
         
@@ -336,41 +345,43 @@ if __name__ == "__main__":
     memory=ReplayMemory(100000)
     policy_network_path='Basic_Walking/model_params/pol'
     q_network_path='Basic_Walking/model_params/q'
-    trainings=10
-    rm_path=None #f'Basic_Walking\\mems\\{trainings}.pkl'
+    trainings=100
+    rm_path=None #f'Basic_Walking\\mems\\116.pkl'
     epsilon=1
-    train=True
+    train=False
+    replay=True
     policy_network=NeuralNetwork('pol',  observation_space, action_space).to(device)
     q_network=NeuralNetwork('q', observation_space, action_space).to(device)
     q_network.load_state_dict(policy_network.state_dict())
     
-    if policy_network:
-        policy_network.load_state_dict(torch.load(policy_network_path))
-        q_network.load_state_dict(torch.load(q_network_path))
-        
-    if rm_path:
-        memory=general_load(rm_path)
-    
+
     hyp_params, policy, target = initialize(dir_name, session_no)
     session = Simulation("Test", render=render, num_of_clients=1, actions=actions, replay_mem=memory, pol=policy_network, q=q_network)
     
     if train:
-        for x in range(5): 
-            epsilon-=.05
+        if policy_network:
+            policy_network.load_state_dict(torch.load(policy_network_path))
+            q_network.load_state_dict(torch.load(q_network_path))
+        if rm_path:
+            memory=general_load(rm_path)
+        
+        for x in range(6): 
+            epsilon-=.12
             session.train(file_names=['simple_dude'], agent_name='dude', action_values=(-1.2, 0, 1.2), server_id=session.gui_id, epsilon=1, eps_decay=0, render=render, 
                             period=500, episodes=10, batch_size=175, lr=.75, loss=nn.MSELoss(), iterations=30)
             trainings+=1
             
-            rm_path=f'Basic_Walking\\mems\\{trainings}.pkl'
+            rm_path=f'Basic_Walking\\mems\\1{trainings}.pkl'
             
             torch.save(policy_network.state_dict(), policy_network_path+str(trainings))
             torch.save(q_network.state_dict(), q_network_path+str(trainings))
             with open(rm_path, 'wb') as pkl_file:
                 pickle.dump(memory, pkl_file)
-    
-    # q=NeuralNetwork('', observation_space, action_space).to(device)
-    # for x in range(1, 6):
-        
-    #     q.load_state_dict(torch.load(q_network_path+str(x)))
-    #     session.replay(file_names=['simple_dude'],server_id=session.gui_id, agent_name='dude', action_values=(-1.2, 0, 1.2), period=300, q=q)
+                
+    if replay:
+        q=NeuralNetwork('', observation_space, action_space).to(device)
+        for x in range(1, 6):
+            r=16100+x
+            q.load_state_dict(torch.load(q_network_path+str(r)))
+            session.replay(file_names=['simple_dude'],server_id=session.gui_id, agent_name='dude', action_values=(-1.2, 0, 1.2), period=300, q=q)
 
