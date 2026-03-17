@@ -235,9 +235,11 @@ class Simulation():
         self.gui_id=PhysClient('GUI', render=render)
             
     def observe(self, file_names: list, episodes: int, server_id: PhysClient, agent_name: str, epsilon: float, action_values: tuple, render: bool, period=1000):
+        server_id.get_status()
         server_id.load_entities(file_names, agent_name)
         actions=server_id.generate_actions(values=action_values, agent_name=agent_name)
         server_id.clear()
+        lasta=None
         for e in range(0, episodes):
             server_id.load_entities(file_names, agent_name)
             for i in range(period):
@@ -252,11 +254,13 @@ class Simulation():
                 server_id.step()
                 #to punish stillness
                 if abs(server_id.get_vel(agent_name)[0][0]) > .2:
-                    r=2**server_id.get_vel(agent_name)[0][0]
+                    r=3**server_id.get_vel(agent_name)[0][0]
                 else:
-                    r=-1
-                if server_id.is_back_grounded(agent_name=agent_name): r-=2
-                self.rm.push((s1, a, sum(server_id.get_pos(agent_name))+r, torch.tensor(server_id.get_state_tensor(agent_name=agent_name)[0])))
+                    r=-.5
+                if server_id.is_back_grounded(agent_name=agent_name): r-=1.5
+                if lasta==a: r-=1.5
+                lasta=a
+                self.rm.push((s1, a, ((2**(server_id.get_pos(agent_name)[0]))+r), torch.tensor(server_id.get_state_tensor(agent_name=agent_name)[0])))
                 
                 if render: time.sleep(1./240.)
             
@@ -276,7 +280,7 @@ class Simulation():
         self.q_optim.zero_grad()
         if self.training_cycles % 5 == 0 and self.training_cycles > 0:
             self.pol_optim.step()
-            self.q_optim.zero_grad()
+            self.pol_optim.zero_grad()
         self.training_cycles+=1
     
     def train(self, batch_size: int, lr: float, loss: function, file_names: list, episodes: int, server_id: PhysClient, agent_name: str, 
@@ -313,7 +317,10 @@ class Simulation():
         server_id.clear()
         server_id.load_entities(file_names, agent_name)
         for x in range(period):
-            a=actions[(q(torch.tensor(server_id.get_state_tensor(agent_name=agent_name)[0])))[1]]
+            if random.uniform(0, 1) < 0.25:
+                    a=random.choice(actions)
+            else:
+                a=actions[(q(torch.tensor(server_id.get_state_tensor(agent_name=agent_name)[0])))[1]]
             print(a)
             server_id.move_joint(agent_name, joint=a[1], value=a[0], mode=0)
             print((server_id.get_vel(agent=agent_name))[0][0], server_id.is_back_grounded(agent_name=agent_name))
@@ -338,18 +345,17 @@ if __name__ == "__main__":
     observation_space=5
     render=True
     
-    
     dir_name='Basic_Walking'
     session_no=1
     network_dims=""
     memory=ReplayMemory(100000)
     policy_network_path='Basic_Walking/model_params/pol'
     q_network_path='Basic_Walking/model_params/q'
-    trainings=100
-    rm_path=None #f'Basic_Walking\\mems\\116.pkl'
+    trainings=200
+    rm_path=f'Basic_Walking\\mems\\1100.pkl'
     epsilon=1
     train=False
-    replay=True
+    replay=False
     policy_network=NeuralNetwork('pol',  observation_space, action_space).to(device)
     q_network=NeuralNetwork('q', observation_space, action_space).to(device)
     q_network.load_state_dict(policy_network.state_dict())
@@ -358,30 +364,36 @@ if __name__ == "__main__":
     hyp_params, policy, target = initialize(dir_name, session_no)
     session = Simulation("Test", render=render, num_of_clients=1, actions=actions, replay_mem=memory, pol=policy_network, q=q_network)
     
-    if train:
-        if policy_network:
-            policy_network.load_state_dict(torch.load(policy_network_path))
-            q_network.load_state_dict(torch.load(q_network_path))
-        if rm_path:
-            memory=general_load(rm_path)
+    if policy_network:
+        policy_network.load_state_dict(torch.load(policy_network_path))
+        q_network.load_state_dict(torch.load(q_network_path))
+    if rm_path:
+        memory=general_load(rm_path)
+    lr=.75
+            
         
-        for x in range(6): 
-            epsilon-=.12
+    if train:
+        for x in range(10): 
+            epsilon-=.08
             session.train(file_names=['simple_dude'], agent_name='dude', action_values=(-1.2, 0, 1.2), server_id=session.gui_id, epsilon=1, eps_decay=0, render=render, 
-                            period=500, episodes=10, batch_size=175, lr=.75, loss=nn.MSELoss(), iterations=30)
-            trainings+=1
+                            period=500, episodes=10, batch_size=175, lr=lr, loss=nn.MSELoss(), iterations=30)
             
-            rm_path=f'Basic_Walking\\mems\\1{trainings}.pkl'
             
-            torch.save(policy_network.state_dict(), policy_network_path+str(trainings))
-            torch.save(q_network.state_dict(), q_network_path+str(trainings))
+            rm_path=f'Basic_Walking\\mems\\2{trainings}.pkl'
+            
+            torch.save(policy_network.state_dict(), policy_network_path+str(trainings+x))
+            torch.save(q_network.state_dict(), q_network_path+str(trainings+x))
             with open(rm_path, 'wb') as pkl_file:
                 pickle.dump(memory, pkl_file)
-                
+            
+            lr+=.05
+            
     if replay:
         q=NeuralNetwork('', observation_space, action_space).to(device)
-        for x in range(1, 6):
-            r=16100+x
+        q.load_state_dict(torch.load(q_network_path+str(1)))
+        session.replay(file_names=['simple_dude'],server_id=session.gui_id, agent_name='dude', action_values=(-1.2, 0, 1.2), period=1000, q=q)
+        for x in range(5, 10):
+            r=200+x
             q.load_state_dict(torch.load(q_network_path+str(r)))
-            session.replay(file_names=['simple_dude'],server_id=session.gui_id, agent_name='dude', action_values=(-1.2, 0, 1.2), period=300, q=q)
+            session.replay(file_names=['simple_dude'],server_id=session.gui_id, agent_name='dude', action_values=(-1.2, 0, 1.2), period=1000, q=q)
 
