@@ -84,11 +84,16 @@ def generate_random_key(length=16):
         key = ''.join(random.choices(characters, k=length))
         return key
 
-def general_save(data: object, dir_path: str, key_length=16):
-    key=dir_path+generate_random_key(key_length)+'.pkl'
+def general_save(data: object, dir_path: str):
+    key=dir_path+str(int(time.time()))+'.pkl'
     
     with open(key, 'wb') as pkl_file:
         pickle.dump(data, pkl_file)
+        
+def general_load(dir_path: str):
+
+    with open(dir_path, 'rb') as f:
+        return pickle.load(f)
         
 def initialize(dir_name: str, session_no: int) -> tuple:
     

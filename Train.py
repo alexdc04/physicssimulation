@@ -56,10 +56,11 @@ from pathlib import Path
 from modules.data_processing import *
 import torch.nn as nn
 from collections import namedtuple, deque
+from itertools import permutations, combinations, product
 
 # neural network class
 class NeuralNetwork(nn.Module):
-        def __init__(self, name, num_actions, num_states):
+        def __init__(self, name, num_states, num_actions, ):
             super().__init__()
             self.name=name
             self.linear_relu_stack=nn.Sequential(
@@ -152,7 +153,6 @@ class PhysClient():
             temp=self.id.loadURDF(read_xacro(file))
             self.objects[agent_name]=(temp, self.generate_joints_dict(temp))
             self.state_tensor=self.get_state(agent_name=agent_name)
-    
     # return joints belonging to a particular agent
     def get_joint_dict(self, agent_name: str):
         return self.objects[agent_name][1]
@@ -163,10 +163,13 @@ class PhysClient():
         self.id.setGravity(grav[0], grav[1], grav[2])
         #print(f"\nServer {self.name} gravity set to: {grav}.")
     
-    # get the current state as a tensor
+    
     def get_state(self, agent_name: str) -> torch.tensor:
-        # Joints are paired (pos, vel)
         return torch.tensor(np.array([(x[0], x[1]) for x in self.id.getJointStates(bodyUniqueId=self.objects[agent_name][0], jointIndices=list((self.objects[agent_name][1]).keys()))])).flatten()
+    
+    def get_state_tensor(self, agent_name: str) -> torch.tensor:
+        # Joints are paired (pos, vel)
+        return tuple(zip(*(self.id.getJointStates(bodyUniqueId=self.objects[agent_name][0], jointIndices=list((self.objects[agent_name][1]).keys())))))[:1]
     
     # return position and orientation
     def get_pos(self, agent_name: str) -> tuple:
@@ -212,42 +215,77 @@ class Simulation():
         self.gui_id=None
         self.rm=replay_mem
         self.pol=pol
+        self.pol_optim=torch.optim.SGD(self.pol.parameters())
         self.q=q
+        self.q_optim=torch.optim.SGD(self.q.parameters())
         self.avg_dist=0
         self.clients={i: PhysClient(i, render=False) for i in range(num_of_clients)}
-        if render: self.gui_id=PhysClient('GUI', render=True)
+        self.training_cycles=0
+        self.gui_id=PhysClient('GUI', render=render)
             
     def observe(self, file_names: list, episodes: int, server_id: PhysClient, agent_name: str, epsilon: float, action_values: tuple, render: bool, period=1000):
         server_id.load_entities(file_names, agent_name)
         actions=server_id.generate_actions(values=action_values, agent_name=agent_name)
         server_id.clear()
-        
         for e in range(0, episodes):
-            
             server_id.load_entities(file_names, agent_name)
             for i in range(period):
                 
-                s1=server_id.get_state(agent_name=agent_name)
+                s1=torch.tensor(server_id.get_state_tensor(agent_name=agent_name)[0])
                 if random.uniform(0, 1) > epsilon:
                     a=random.choice(actions)
                 else:
-                    a=actions[int(self.q.forward(s1)[1])]
+                    a=actions[(self.q(s1))[1]]
+                    
                 server_id.move_joint(agent_name, joint=a[1], value=a[0], mode=0)
-                self.rm.push((s1, server_id.get_pos(agent_name), a, server_id.get_state(agent_name=agent_name)))
                 server_id.step()
+                self.rm.push((s1, a, sum(server_id.get_pos(agent_name)), torch.tensor(server_id.get_state_tensor(agent_name=agent_name)[0])))
                 
                 if render: time.sleep(1./240.)
             
             server_id.clear()
             
-    def deep_Q_learn(self, batch_size: int, gamma: float):
+    def deep_Q_learn(self, batch_size: int, lr: float, loss: function):
         training_batch=self.rm.sample(batch_size)
-        states=torch.stack([t[0][0] for t in training_batch])
-        targets=torch.stack([t[0][3] for t in training_batch])
+        s1=self.q(torch.stack([t[0][0] for t in training_batch]))[0]
+        s2=self.pol(torch.stack([t[0][3] for t in training_batch]))[0]
+        yj=s2.clone()
+        yj.scatter_reduce(dim=1, index=yj.argmax(dim=1).unsqueeze(1), src=torch.full((batch_size,1), lr), reduce="prod")
+        yj.scatter_reduce_(dim=1, index=yj.argmax(dim=1).unsqueeze(1), src=torch.tensor([t[0][2] for t in training_batch]).unsqueeze(1), reduce="sum")
         n=len(training_batch)//2
-        loss=nn.MSELoss()
-        loss=(states, targets)
+        l=loss(s1, yj)
+        l.backward()
+        self.q_optim.step()
+        self.q_optim.zero_grad()
+        if self.training_cycles % 5 == 0 and self.training_cycles > 0:
+            self.pol_optim.step()
+            self.q_optim.zero_grad()
+        self.training_cycles+=1
+    
+    def train(self, batch_size: int, lr: float, loss: function, file_names: list, episodes: int, server_id: PhysClient, agent_name: str, 
+                epsilon: float, action_values: tuple, render: bool, eps_decay: float, iterations= 1, period=1000):
+        start=time.time()
         
+        for iteration in range(iterations):
+            print(f"Starting iteration {iteration} of {iterations}. Total time elapsed: {time.time()-start}")
+            temp=time.time()
+            print(f"Starting Observation.")
+            self.observe(file_names=file_names, agent_name=agent_name, action_values=action_values, server_id=server_id, epsilon=epsilon, render=render, period=period, episodes=episodes)
+            print(f"Finished Observation! Time taken: {time.time()-temp}")
+            temp=time.time()
+            print(f"Starting Learning.")
+            self.deep_Q_learn(batch_size=batch_size, lr=lr, loss=loss)
+            print(f"Finished Learning! Time taken: {time.time()-temp}")
+    
+    def q_table_learn(self, values:tuple, actions, joints:int, epsilon: float):
+        print("placeholder")
+        #Create the 
+        states={x: np.zeros(joints*actions) for x in list(product(values, repeat=joints))}
+        x=random.uniform(0, 1)
+        if x > epsilon:
+            choice=divmod(random.randint(0, joints*actions))
+        else:
+            print("placeholder")
         
     def get_replay_mem(self):
         return self.rm
@@ -261,29 +299,48 @@ if __name__ == "__main__":
     )
     
     settings, situation, hyperparameters=initialize(dir_name='Basic_Walking', session_no='1')
-    
     actions={
         0: 1,
         1: 1,
         2: 1
     }
     action_space=15
-    observation_space=10
+    observation_space=5
+    render=False
+    
     
     dir_name='Basic_Walking'
     session_no=1
     network_dims=""
     memory=ReplayMemory(100000)
-    policy_network=NeuralNetwork('pol', action_space, observation_space).to(device)
-    q_network=NeuralNetwork('q', action_space, observation_space).to(device)
+    policy_network_path='Basic_Walking/model_params/pol'
+    q_network_path='Basic_Walking/model_params/q'
+    trainings=2
+    rm_path=f'Basic_Walking\\mems\\{trainings}.pkl'
+    
+    policy_network=NeuralNetwork('pol',  observation_space, action_space).to(device)
+    q_network=NeuralNetwork('q', observation_space, action_space).to(device)
     q_network.load_state_dict(policy_network.state_dict())
     
+    if policy_network:
+        policy_network.load_state_dict(torch.load(policy_network_path))
+        q_network.load_state_dict(torch.load(q_network_path))
+        
+    if rm_path:
+        memory=general_load(rm_path)
+        
     hyp_params, policy, target = initialize(dir_name, session_no)
-    session = Simulation("Test", render=True, num_of_clients=1, actions=actions, replay_mem=memory, pol=policy_network, q=q_network)
-    session.observe(file_names=['simple_dude'], agent_name='dude', action_values=(-1.2, 0, 1.2), 
-                    server_id=session.gui_id, epsilon=.5, render=True, period=1000, episodes=2)
-    session.learn(20, .6)
+    session = Simulation("Test", render=render, num_of_clients=1, actions=actions, replay_mem=memory, pol=policy_network, q=q_network)
     
-    general_save(session.get_replay_mem(), 'Basic_Walking/replay_mems/')
+    session.train(file_names=['simple_dude'], agent_name='dude', action_values=(-1.2, 0, 1.2), server_id=session.gui_id, epsilon=1, eps_decay=0, render=render, 
+                    period=300, episodes=12, batch_size=175, lr=.75, loss=nn.MSELoss(), iterations=35)
+    trainings+=1
+    rm_path=f'Basic_Walking\\mems\\{trainings}.pkl'
+    
+    torch.save(policy_network.state_dict(), policy_network_path)
+    torch.save(q_network.state_dict(), q_network_path)
+    with open(rm_path, 'wb') as pkl_file:
+        pickle.dump(memory, pkl_file)
+    #general_save(session.get_replay_mem(), 'Basic_Walking/replay_mems/')
     
 
