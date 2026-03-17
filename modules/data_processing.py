@@ -85,7 +85,7 @@ def generate_random_key(length=16):
         return key
 
 def general_save(data: object, dir_path: str):
-    key=dir_path+str(int(time.time()))+'.pkl'
+    key=dir_path+srt(int(time.time()))+'.pkl'
     
     with open(key, 'wb') as pkl_file:
         pickle.dump(data, pkl_file)
