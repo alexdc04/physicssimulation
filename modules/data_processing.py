@@ -85,7 +85,7 @@ def generate_random_key(length=16):
         return key
 
 def general_save(data: object, dir_path: str):
-    key=dir_path+str(int(time.time()))+'.pkl'
+    key=dir_path+'.pkl'
     
     with open(key, 'wb') as pkl_file:
         pickle.dump(data, pkl_file)
@@ -95,21 +95,3 @@ def general_load(dir_path: str):
     with open(dir_path, 'rb') as f:
         return pickle.load(f)
         
-def initialize(dir_name: str, session_no: int) -> tuple:
-    
-    """Loads session data for a given scenario and session.
-
-    Args:
-        dir_name: Scenario data directory.
-        session_no: Session Number.
-
-    Returns:
-        Hyperparameters - Dict \n
-        Target Network Parameters - Dict \n
-        Policy Network Parameters - Dict \n
-    """
-    data=load_json(dir_name, f'Session_{session_no}')
-    pol=None
-    target=None
-    
-    return data["Physics_Settings"], data['Situation'], data['Hyperparameters']

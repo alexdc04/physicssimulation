@@ -1,0 +1,144 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="Robot 7">
+
+<xacro:property name="total_weight" value="75" /> <!--KG-->
+<xacro:property name="torso_weight" value="${total_weight * 0.6}" />
+<xacro:property name="leg_weight" value="${total_weight * .15}" />
+<xacro:property name="arm_weight" value="${total_weight * .05}" />
+<xacro:property name="Cyan" value="0 1.0 1.0 1.0"/>
+<xacro:property name="Lilac" value=".8 .6 1.0 1.0"/>
+
+<!-- FIX 1: solid sphere inertia - was using ${weight} instead of ${mass} in mass tag -->
+<xacro:macro name="solid_sphere_inertia_tensors" params="mass radius" >
+    <inertial>
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+        <mass value="${mass}"/>
+        <inertia 
+        ixx="${(2/5) * mass * radius * radius}" ixy="0.0" ixz="0.0" 
+        iyy="${(2/5) * mass * radius * radius}" iyz="0.0" 
+        izz="${(2/5) * mass * radius * radius}"/>
+    </inertial>
+</xacro:macro>
+
+<!-- FIX 1: hollow sphere inertia - same ${weight} -> ${mass} bug -->
+<xacro:macro name="hollow_sphere_inertia_tensors" params="mass radius" >
+    <inertial>
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+        <mass value="${mass}"/>
+        <inertia 
+        ixx="${(2/3) * mass * radius * radius}" ixy="0.0" ixz="0.0" 
+        iyy="${(2/3) * mass * radius * radius}" iyz="0.0" 
+        izz="${(2/3) * mass * radius * radius}"/>
+    </inertial>
+</xacro:macro>
+
+<!-- FIX 2: cuboid inertia now takes x_len y_len z_len explicitly
+    Original used hardcoded magic numbers (0.025, 0.0225) instead of actual dims
+     Correct formula: ixx = m/12 * (y^2 + z^2), etc. -->
+<xacro:macro name="cuboid_inertia_tensors" params="mass x_len y_len z_len" >
+    <inertial>
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+        <mass value="${mass}"/>
+        <inertia 
+        ixx="${(mass/12) * (y_len*y_len + z_len*z_len)}" ixy="0.0" ixz="0.0" 
+        iyy="${(mass/12) * (x_len*x_len + z_len*z_len)}" iyz="0.0" 
+        izz="${(mass/12) * (x_len*x_len + y_len*y_len)}"/>
+    </inertial>
+</xacro:macro>
+
+<!-- FIX 2 continued: cuboid macro now passes x_len y_len z_len to inertia macro -->
+<xacro:macro name="cuboid" params="name mass x_len y_len z_len origin rpy">
+    <link name="${name}">
+        <visual>
+            <geometry>
+                <box size="${x_len} ${y_len} ${z_len}"/>
+            </geometry>
+            <origin xyz="${origin}" rpy="${rpy}"/>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="${x_len} ${y_len} ${z_len}"/>
+            </geometry>
+            <origin xyz="${origin}" rpy="${rpy}"/>
+        </collision>
+        <xacro:cuboid_inertia_tensors mass="${mass}" x_len="${x_len}" y_len="${y_len}" z_len="${z_len}"/>
+    </link>
+</xacro:macro>
+
+<xacro:macro name="revolve" params="name parent child hi lo axis offset">
+    <joint name="${name}" type="revolute">
+        <parent link="${parent}"/>
+        <child link="${child}"/>
+        <limit lower="${lo}" upper="${hi}" effort="200.0" velocity="25.0"/>
+        <dynamics damping="0.0" friction="0.0"/>
+        <origin xyz="${offset}"/>
+        <axis xyz="${axis}"/>
+    </joint>
+</xacro:macro>
+
+
+<xacro:cuboid name="base_link" mass="${torso_weight * .12}" x_len=".03" y_len=".05" z_len=".025" origin="0 0 0" rpy="0 0 0"/>
+
+<!-- Torso Links -->
+<xacro:cuboid name="low_torso"    mass="${torso_weight * .31}" x_len=".03" y_len=".05" z_len=".065" origin="0 0 .045"  rpy="0 0 0"/>
+<xacro:cuboid name="upper_torso"  mass="${torso_weight * .31}" x_len=".03" y_len=".05" z_len=".065" origin="0 0 .0325" rpy="0 0 0"/>
+<xacro:cuboid name="head"         mass="${torso_weight * .24}" x_len=".03" y_len=".05" z_len=".05"  origin="0 0 .0325" rpy="0 0 0"/>
+
+<!-- Torso Joints -->
+<xacro:revolve name="bend_low_torso"   parent="base_link"   child="low_torso"    hi=".8" lo="-.8" axis="0 1 0" offset="0 0 0"/>
+<xacro:revolve name="twist_upper_torso" parent="low_torso"  child="upper_torso"  hi=".8" lo="-.8" axis="0 0 1" offset="0 0 .075"/>
+<xacro:revolve name="gaze"             parent="upper_torso" child="head"         hi=".8" lo="-.8" axis="0 0 1" offset="0 0 .058"/>
+
+
+<!-- Arm Links -->
+<xacro:cuboid name="right_delt"      mass="${arm_weight * .4}"  x_len=".03"  y_len=".03"  z_len=".03"  origin="0 0 0"       rpy="0 0 0"/>
+<xacro:cuboid name="right_upper_arm" mass="${arm_weight * .29}" x_len=".022" y_len=".022" z_len=".065" origin=".005 0 -.025" rpy="0 -${3.14/15} 0"/>
+<xacro:cuboid name="right_lower_arm" mass="${arm_weight * .29}" x_len=".022" y_len=".022" z_len=".065" origin=".005 0 -.025" rpy="0 -${3.14/10} 0"/>
+
+<xacro:cuboid name="left_delt"       mass="${arm_weight * .4}"  x_len=".03"  y_len=".03"  z_len=".03"  origin="0 0 0"       rpy="0 0 0"/>
+<xacro:cuboid name="left_upper_arm"  mass="${arm_weight * .29}" x_len=".022" y_len=".022" z_len=".065" origin=".005 0 -.025" rpy="0 -${3.14/15} 0"/>
+<xacro:cuboid name="left_lower_arm"  mass="${arm_weight * .29}" x_len=".022" y_len=".022" z_len=".065" origin=".005 0 -.025" rpy="0 -${3.14/10} 0"/>
+
+<!-- Arm Joints -->
+<xacro:revolve name="right_shoulder_x" parent="upper_torso"    child="right_delt"      hi="1.5"  lo="0"    axis="1 0 0" offset="0 .035 .05"/>
+<xacro:revolve name="right_shoulder_y" parent="right_delt"     child="right_upper_arm" hi="1.2"  lo="-1.2" axis="0 1 0" offset="0 0 -.015"/>
+<xacro:revolve name="right_elbow"      parent="right_upper_arm" child="right_lower_arm" hi="0"   lo="-1.2" axis="0 1 0" offset=".015 0 -.055"/>
+
+<xacro:revolve name="left_shoulder_x"  parent="upper_torso"   child="left_delt"       hi="0"    lo="-1.5" axis="1 0 0" offset="0 -.035 .05"/>
+<xacro:revolve name="left_shoulder_y"  parent="left_delt"     child="left_upper_arm"  hi="1.2"  lo="-1.2" axis="0 1 0" offset="0 0 -.015"/>
+<xacro:revolve name="left_elbow"       parent="left_upper_arm" child="left_lower_arm"  hi="0"   lo="-1.2" axis="0 1 0" offset=".015 0 -.055"/>
+
+
+
+<xacro:cuboid name="right_hip_inter" mass="${leg_weight * .05}" x_len=".02" y_len=".02" z_len=".02" origin="0 0 0" rpy="0 0 0"/>
+<xacro:cuboid name="left_hip_inter"  mass="${leg_weight * .05}" x_len=".02" y_len=".02" z_len=".02" origin="0 0 0" rpy="0 0 0"/>
+
+<!-- abduction joints first (X axis), then flexion joints (Y axis) as before -->
+<xacro:revolve name="right_hip_abduct" parent="base_link"       child="right_hip_inter" hi=".4"  lo="-.4"  axis="1 0 0" offset="0 .014 0"/>
+<xacro:revolve name="right_hip_joint"  parent="right_hip_inter" child="right_thigh"     hi="1.2" lo="-1.2" axis="0 1 0" offset="0 0 0"/>
+
+<xacro:revolve name="left_hip_abduct"  parent="base_link"       child="left_hip_inter"  hi=".4"  lo="-.4"  axis="1 0 0" offset="0 -.014 0"/>
+<xacro:revolve name="left_hip_joint"   parent="left_hip_inter"  child="left_thigh"      hi="1.2" lo="-1.2" axis="0 1 0" offset="0 0 0"/>
+
+
+<!-- Leg Links -->
+<xacro:cuboid name="right_thigh" mass="${leg_weight * .5}" x_len=".022" y_len=".022" z_len=".1" origin=".01 0 -.05"  rpy="0 -${3.14/15} 0"/>
+<xacro:cuboid name="left_thigh"  mass="${leg_weight * .5}" x_len=".022" y_len=".022" z_len=".1" origin=".01 0 -.05"  rpy="0 -${3.14/15} 0"/>
+
+<xacro:cuboid name="right_calf"  mass="${leg_weight * .5}" x_len=".022" y_len=".022" z_len=".1" origin="-.005 0 -.05" rpy="0 ${3.14/20} 0"/>
+<xacro:cuboid name="left_calf"   mass="${leg_weight * .5}" x_len=".022" y_len=".022" z_len=".1" origin="-.005 0 -.05" rpy="0 ${3.14/20} 0"/>
+
+<xacro:cuboid name="right_foot"  mass="${leg_weight * .05}" x_len=".045" y_len=".022" z_len=".01" origin=".015 0 0" rpy="0 0 0"/>
+<xacro:cuboid name="left_foot"   mass="${leg_weight * .05}" x_len=".045" y_len=".022" z_len=".01" origin=".015 0 0" rpy="0 0 0"/>
+
+<!-- FIX 4: Leg masses were using arm_weight instead of leg_weight.
+     leg_weight = total * 0.15, arm_weight = total * 0.05 — legs were 3x too light -->
+
+<!-- Leg Joints (knee and ankle unchanged) -->
+<xacro:revolve name="right_knee"  parent="right_thigh" child="right_calf"  hi="1.2" lo="0"   axis="0 1 0" offset=".02 0 -.09"/>
+<xacro:revolve name="left_knee"   parent="left_thigh"  child="left_calf"   hi="1.2" lo="0"   axis="0 1 0" offset=".02 0 -.09"/>
+
+<xacro:revolve name="right_ankle" parent="right_calf"  child="right_foot"  hi=".8"  lo="-.8" axis="0 1 0" offset="-.015 0 -.1"/>
+<xacro:revolve name="left_ankle"  parent="left_calf"   child="left_foot"   hi=".8"  lo="-.8" axis="0 1 0" offset="-.015 0 -.1"/>
+
+</robot>

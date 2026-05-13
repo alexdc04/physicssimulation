@@ -79,21 +79,21 @@
   <joint name="bend_low_torso" type="revolute">
     <parent link="base_link"/>
     <child link="low_torso"/>
-    <limit effort="20.0" lower="-0.8" upper="0.8" velocity="20.0"/>
+    <limit effort="200.0" lower="-0.8" upper="0.8" velocity="25.0"/>
     <origin xyz="0 0 0"/>
     <axis xyz="0 1 0"/>
   </joint>
   <joint name="twist_upper_torso" type="revolute">
     <parent link="low_torso"/>
     <child link="upper_torso"/>
-    <limit effort="20.0" lower="-0.8" upper="0.8" velocity="20.0"/>
+    <limit effort="200.0" lower="-0.8" upper="0.8" velocity="25.0"/>
     <origin xyz="0 0 .075"/>
     <axis xyz="0 0 1"/>
   </joint>
   <joint name="gaze" type="revolute">
     <parent link="upper_torso"/>
     <child link="head"/>
-    <limit effort="20.0" lower="-0.8" upper="0.8" velocity="20.0"/>
+    <limit effort="200.0" lower="-0.8" upper="0.8" velocity="25.0"/>
     <origin xyz="0 0 .058"/>
     <axis xyz="0 0 1"/>
   </joint>
@@ -214,42 +214,42 @@
   <joint name="right_shoulder_x" type="revolute">
     <parent link="upper_torso"/>
     <child link="right_delt"/>
-    <limit effort="20.0" lower="0" upper="1.5" velocity="20.0"/>
+    <limit effort="200.0" lower="0" upper="1.5" velocity="25.0"/>
     <origin xyz="0 .035 .05"/>
     <axis xyz="1 0 0"/>
   </joint>
   <joint name="right_shoulder_y" type="revolute">
     <parent link="right_delt"/>
     <child link="right_upper_arm"/>
-    <limit effort="20.0" lower="-1.2" upper="1.2" velocity="20.0"/>
+    <limit effort="200.0" lower="-1.2" upper="1.2" velocity="25.0"/>
     <origin xyz="0 0 -.015"/>
     <axis xyz="0 1 0"/>
   </joint>
   <joint name="right_elbow" type="revolute">
     <parent link="right_upper_arm"/>
     <child link="right_lower_arm"/>
-    <limit effort="20.0" lower="-1.2" upper="0" velocity="20.0"/>
+    <limit effort="200.0" lower="-1.2" upper="0" velocity="25.0"/>
     <origin xyz=".015 0 -.055"/>
     <axis xyz="0 1 0"/>
   </joint>
   <joint name="left_shoulder_x" type="revolute">
     <parent link="upper_torso"/>
     <child link="left_delt"/>
-    <limit effort="20.0" lower="0" upper="1.5" velocity="20.0"/>
+    <limit effort="200.0" lower="-1.5" upper="0" velocity="25.0"/>
     <origin xyz="0 -.035 .05"/>
     <axis xyz="1 0 0"/>
   </joint>
   <joint name="left_shoulder_y" type="revolute">
     <parent link="left_delt"/>
     <child link="left_upper_arm"/>
-    <limit effort="20.0" lower="-1.2" upper="1.2" velocity="20.0"/>
+    <limit effort="200.0" lower="-1.2" upper="1.2" velocity="25.0"/>
     <origin xyz="0 0 -.015"/>
     <axis xyz="0 1 0"/>
   </joint>
   <joint name="left_elbow" type="revolute">
     <parent link="left_upper_arm"/>
     <child link="left_lower_arm"/>
-    <limit effort="20.0" lower="-1.2" upper="0" velocity="20.0"/>
+    <limit effort="200.0" lower="-1.2" upper="0" velocity="25.0"/>
     <origin xyz=".015 0 -.055"/>
     <axis xyz="0 1 0"/>
   </joint>
@@ -370,42 +370,42 @@
   <joint name="right_hip_joint" type="revolute">
     <parent link="base_link"/>
     <child link="right_thigh"/>
-    <limit effort="20.0" lower="-1.2" upper="1.2" velocity="20.0"/>
+    <limit effort="200.0" lower="-1.2" upper="1.2" velocity="25.0"/>
     <origin xyz="0 .014 0"/>
     <axis xyz="0 1 0"/>
   </joint>
   <joint name="left_hip_joint" type="revolute">
     <parent link="base_link"/>
     <child link="left_thigh"/>
-    <limit effort="20.0" lower="-1.2" upper="1.2" velocity="20.0"/>
+    <limit effort="200.0" lower="-1.2" upper="1.2" velocity="25.0"/>
     <origin xyz="0 -.014 0"/>
     <axis xyz="0 1 0"/>
   </joint>
   <joint name="right_knee" type="revolute">
     <parent link="right_thigh"/>
     <child link="right_calf"/>
-    <limit effort="20.0" lower="0" upper="1.2" velocity="20.0"/>
+    <limit effort="200.0" lower="0" upper="1.2" velocity="25.0"/>
     <origin xyz=".02 0 -.09"/>
     <axis xyz="0 1 0"/>
   </joint>
   <joint name="left_knee" type="revolute">
     <parent link="left_thigh"/>
     <child link="left_calf"/>
-    <limit effort="20.0" lower="0" upper="1.2" velocity="20.0"/>
+    <limit effort="200.0" lower="0" upper="1.2" velocity="25.0"/>
     <origin xyz=".02 0 -.09"/>
     <axis xyz="0 1 0"/>
   </joint>
   <joint name="right_ankle" type="revolute">
     <parent link="right_calf"/>
     <child link="right_foot"/>
-    <limit effort="20.0" lower="-0.8" upper="0.8" velocity="20.0"/>
+    <limit effort="200.0" lower="-0.8" upper="0.8" velocity="25.0"/>
     <origin xyz="-.015 0 -.1"/>
     <axis xyz="0 1 0"/>
   </joint>
   <joint name="left_ankle" type="revolute">
     <parent link="left_calf"/>
     <child link="left_foot"/>
-    <limit effort="20.0" lower="-0.8" upper="0.8" velocity="20.0"/>
+    <limit effort="200.0" lower="-0.8" upper="0.8" velocity="25.0"/>
     <origin xyz="-.015 0 -.1"/>
     <axis xyz="0 1 0"/>
   </joint>
