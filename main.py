@@ -358,12 +358,13 @@ class Simulation():
 
 
 if __name__=='__main__':
-    with open('PPO Trial 1\\weights0.pkl', 'rb') as file:
+    weights='\\sample_weights.pkl'
+    with open(weights, 'rb') as file:
         file_names=pickle.load(file)
-    file_names=None
+    
     longest=2.65
 
     Trial=Simulation(num_of_envs=24, render=False, agent="bodyv8", longest=longest)
-    Trial.start(time_steps=350, episodes=2000, discount=.99, minibatch_len=100, lam=.97, save_interval=5, save_dir='PPO Trial 8', params=file_names, updates=5)
+    Trial.start(time_steps=350, episodes=2000, discount=.99, minibatch_len=100, lam=.97, save_interval=5, save_dir='New_Trial', params=file_names, updates=5)
     
     

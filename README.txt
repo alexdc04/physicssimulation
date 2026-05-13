@@ -1,20 +1,5 @@
-The models are contained in a seperate directory with 2 subdirectories.
-URDF (Universal Robot Descriptive Format) has macros with XACRO.
-To read the files, the program will scan from the xacro and create or update in the raw file.
+The following repo is a senior project exploration into Deep Reinforcement Learning.
 
-
-
-
-
-
-
-
-
-
-
-Walking Model:
-Will want to increase distance as a reward.
-Parameters:
-# of limbs to move (int)
-Limbs moved (list(int))
-Forces of limbs(list(float))
+How to run:
+1. Navigate to main.py and locate the main function at the bottom.
+2. 
